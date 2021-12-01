@@ -17,16 +17,24 @@ defmodule AdventOfCode.Helpers.Generator do
   """
   @spec run({integer(), integer()}) :: String.t()
   def run({year, day}) do
+    input_dir = Path.join("priv", "input_files")
+    build_priv_dir = Path.join(:code.priv_dir(:advent_of_code), "input_files")
+    code_dir = Path.join("lib", to_string(year))
+    test_dir = Path.join("test", to_string(year))
+
+    for dir <- [input_dir, build_priv_dir, code_dir, test_dir], not File.dir?(dir) do
+      File.mkdir_p!(dir)
+    end
+
     # Write the input data at `priv/input_files`
-    input_file_path =
-      :advent_of_code
-      |> :code.priv_dir()
-      |> Path.join("input_files")
-      |> Path.join("#{year}_#{day}.txt")
+    input_file_path = Path.join(input_dir, "#{year}_#{zero_padded(day)}.txt")
+    build_priv_file_path = Path.join(build_priv_dir, "#{year}_#{zero_padded(day)}.txt")
 
     input_file =
       input_file_path
       |> create_input_file(year, day)
+
+    File.cp!(input_file_path, build_priv_file_path)
 
     # Write code files at `lib/<year>/day_<day>.ex`
     code_content =
@@ -34,7 +42,8 @@ defmodule AdventOfCode.Helpers.Generator do
       |> EEx.eval_file(day: day, year: year, title: get_title(year, day))
 
     code_file =
-      "lib/#{year}/day_#{zero_padded(day)}.ex"
+      code_dir
+      |> Path.join("day_#{zero_padded(day)}.ex")
       |> create_file(code_content)
 
     # Write test files at `test/<year>/day_<year>_test.exs`
@@ -43,7 +52,8 @@ defmodule AdventOfCode.Helpers.Generator do
       |> EEx.eval_file(day: day, year: year)
 
     test_file =
-      "test/#{year}/day_#{zero_padded(day)}_test.exs"
+      test_dir
+      |> Path.join("day_#{zero_padded(day)}_test.exs")
       |> create_file(test_content)
 
     "INPUT: #{input_file}\tCODE: #{code_file}\tTEST: #{test_file}\n"
