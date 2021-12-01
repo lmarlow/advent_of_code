@@ -11,7 +11,11 @@ defmodule AdventOfCode.Y2020.Day01 do
 
   def run_1(data) when is_list(data), do: data |> solve1()
 
-  def run_2, do: {:not_implemented, 2}
+  def run_2(data \\ input!())
+
+  def run_2(data) when is_binary(data), do: data |> parse() |> run_2()
+
+  def run_2(data) when is_list(data), do: data |> solve2()
 
   def parse(data) do
     data
@@ -25,7 +29,13 @@ defmodule AdventOfCode.Y2020.Day01 do
     for x <- data, y <- Enum.drop(data, 1), x + y == 2020 do
       x * y
     end
-    |> IO.inspect()
+    |> List.first()
+  end
+
+  def solve2(data) do
+    for x <- data, y <- Enum.drop(data, 1), z <- Enum.drop(data, 2), x + y + z == 2020 do
+      x * y * z
+    end
     |> List.first()
   end
 

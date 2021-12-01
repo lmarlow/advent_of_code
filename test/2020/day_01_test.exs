@@ -25,7 +25,22 @@ defmodule AdventOfCode.Y2020.Day01Test do
     end
   end
 
-  test "Year 2020, Day 1, Part 2" do
-    assert Solution.run_2() == nil
+  describe "part 2" do
+    test "sample" do
+      data = ~S"""
+      1721
+      979
+      366
+      299
+      675
+      1456
+      """
+
+      assert Solution.run_2(data) == 241_861_950
+    end
+
+    test "input file" do
+      assert Solution.run_2() == 200_878_544
+    end
   end
 end
