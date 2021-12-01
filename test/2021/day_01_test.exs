@@ -6,11 +6,31 @@ defmodule AdventOfCode.Y2021.Day01Test do
 
   alias AdventOfCode.Y2021.Day01, as: Solution
 
-  test "Year 2021, Day 1, Part 1" do
-    assert Solution.run_1() == 1139
+  describe "part 1" do
+    test "no data" do
+      assert Solution.run_1([]) == 0
+    end
+
+    test "some increases" do
+      assert Solution.run_1([1, 2, 1]) == 1
+    end
+
+    test "always decreasing" do
+      assert Solution.run_1([3, 2, 1]) == 0
+    end
+
+    test "input file" do
+      assert Solution.run_1() == 1298
+    end
   end
 
-  test "Year 2021, Day 1, Part 2" do
-    assert Solution.run_2() == 1103
+  describe "part 2" do
+    test "sample data" do
+      assert Solution.run_2([607, 618, 618, 617, 647, 716, 769, 792]) == 5
+    end
+
+    test "input file" do
+      assert Solution.run_2() == 1248
+    end
   end
 end
