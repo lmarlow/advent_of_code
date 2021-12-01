@@ -5,8 +5,11 @@ defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(day, 2, "0") %> do
   """
   use AdventOfCode.Helpers.InputReader, year: <%= year %>, day: <%= day %>
 
-  def run_1, do: {:not_implemented, 1}
-  def run_2, do: {:not_implemented, 2}
+  def run(data \\ input!(), part)
+
+  def run(data, part) when is_binary(data), do: data |> parse() |> run(part)
+
+  def run(data, part) when is_list(data), do: data |> solve(part)
 
   def parse(data) do
     data
@@ -14,5 +17,18 @@ defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(day, 2, "0") %> do
   end
 
   # --- <Solution Functions> ---
+
+  @doc """
+  """
+  def solve(data, 1) do
+    {1, :not_implemented}
+  end
+
+  @doc """
+  """
+  def solve(data, 2) do
+    {2, :not_implemented}
+  end
+
   # --- </Solution Functions> ---
 end

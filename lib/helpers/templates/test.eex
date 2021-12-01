@@ -6,11 +6,29 @@ defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(day, 2, "0") %>Tes
 
   alias AdventOfCode.Y<%= year  %>.Day<%= String.pad_leading(day, 2, "0") %>, as: Solution
 
-  test "Year <%= year %>, Day <%= day %>, Part 1" do
-    assert Solution.run_1() == nil
+  describe "part 1" do
+    test "example" do
+      data = ~S"""
+      """
+
+      assert Solution.run(data, 1) == nil
+    end
+
+    test "input file" do
+      assert Solution.run(1) == nil
+    end
   end
 
-  test "Year <%= year %>, Day <%= day %>, Part 2" do
-    assert Solution.run_2() == nil
+  describe "part 2" do
+    test "example" do
+      data = ~S"""
+      """
+
+      assert Solution.run(data, 2) == nil
+    end
+
+    test "input file" do
+      assert Solution.run(2) == nil
+    end
   end
 end
