@@ -6,7 +6,7 @@
 | :-: | :------------------------------------------------: | ---------: | :------------------------------: | :-------------------------------------------: |
 |  1  | [Sonar Sweep](https://adventofcode.com/2021/day/1) |    :star2: | [day_01.ex](/lib/2021/day_01.ex) | [day_01_test.exs](/test/2021/day_01_test.exs) |
 |  2  |    [Dive!](https://adventofcode.com/2021/day/2)    |    :star2: | [day_02.ex](/lib/2021/day_02.ex) | [day_02_test.exs](/test/2021/day_02_test.exs) |
-|  3  | [Binary Diagnostic](https://adventofcode.com/2021/day/3)    |            | [day_03.ex](/lib/2021/day_03.ex) | [day_03_test.exs](/test/2021/day_03_test.exs) |
+|  3  | [Binary Diagnostic](https://adventofcode.com/2021/day/3) | :star2: | [day_03.ex](/lib/2021/day_03.ex) | [day_03_test.exs](/test/2021/day_03_test.exs) |
 |  4  |    [Day 4](https://adventofcode.com/2021/day/4)    |            | [day_04.ex](/lib/2021/day_04.ex) | [day_04_test.exs](/test/2021/day_04_test.exs) |
 |  5  |    [Day 5](https://adventofcode.com/2021/day/5)    |            | [day_05.ex](/lib/2021/day_05.ex) | [day_05_test.exs](/test/2021/day_05_test.exs) |
 |  6  |    [Day 6](https://adventofcode.com/2021/day/6)    |            | [day_06.ex](/lib/2021/day_06.ex) | [day_06_test.exs](/test/2021/day_06_test.exs) |
