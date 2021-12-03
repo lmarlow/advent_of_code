@@ -20,6 +20,7 @@ defmodule AdventOfCode.Y2021.Day03Test do
   00010
   01010
   """
+
   describe "part 1" do
     test "example" do
       assert Solution.run(@sample_data, 1) == 198

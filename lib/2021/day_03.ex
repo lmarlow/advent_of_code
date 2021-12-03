@@ -8,6 +8,7 @@ defmodule AdventOfCode.Y2021.Day03 do
   @doc """
   Sample data:
 
+  ```
   00100
   11110
   10110
@@ -20,6 +21,7 @@ defmodule AdventOfCode.Y2021.Day03 do
   11001
   00010
   01010
+  ```
   """
   def run(data \\ input!(), part)
 
@@ -32,10 +34,10 @@ defmodule AdventOfCode.Y2021.Day03 do
     |> String.split("\n", trim: true)
   end
 
-  # --- <Solution Functions> ---
-
   def solve(data, 1), do: solve_1(data)
   def solve(data, 2), do: solve_2(data)
+
+  # --- <Solution Functions> ---
 
   @doc """
   """
