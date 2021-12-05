@@ -5,6 +5,43 @@ defmodule AdventOfCode.Y2021.Day04 do
   """
   use AdventOfCode.Helpers.InputReader, year: 2021, day: 4
 
+  defmodule Board do
+    defstruct rows: [], winner?: false, turns: 0, score: 0
+
+    def play(%Board{winner?: true} = board, _), do: board
+
+    def play(%Board{rows: rows} = board, number) do
+      rows =
+        Enum.map(rows, fn row ->
+          Enum.map(row, fn
+            ^number -> false
+            other -> other
+          end)
+        end)
+
+      winner? = winner?(rows)
+      %{board | rows: rows, winner?: winner?, turns: board.turns + 1, score: number * score(rows)}
+    end
+
+    defp winner?(rows) do
+      any_winning_rows = Enum.find(rows, &(not Enum.any?(&1)))
+
+      any_winning_cols =
+        Enum.find(0..4, fn col ->
+          not Enum.any?(Enum.map(rows, &Enum.at(&1, col)))
+        end)
+
+      if any_winning_rows || any_winning_cols, do: true, else: false
+    end
+
+    defp score(rows) do
+      rows
+      |> List.flatten()
+      |> Enum.filter(& &1)
+      |> Enum.sum()
+    end
+  end
+
   @doc ~S"""
   Sample data:
 
@@ -34,29 +71,60 @@ defmodule AdventOfCode.Y2021.Day04 do
 
   def run(data, part) when is_binary(data), do: data |> parse() |> run(part)
 
-  def run(data, part) when is_list(data), do: data |> solve(part)
+  def run({_drawings, _boards} = data, part), do: data |> solve(part)
 
   def parse(data) do
-    data
-    |> String.split("\n", trim: true)
+    [drawings | boards] =
+      data
+      |> String.split("\n", trim: true)
+      |> Enum.map(&String.trim/1)
+
+    drawings = String.split(drawings, ",") |> Enum.map(&String.to_integer/1)
+
+    boards =
+      boards
+      |> Enum.map(fn row -> String.split(row) |> Enum.map(&String.to_integer/1) end)
+      |> Enum.chunk_every(5)
+      |> Enum.map(&struct(Board, rows: &1))
+
+    {drawings, boards}
   end
 
-  def solve(data, 1), do: solve_1(data)
-  def solve(data, 2), do: solve_2(data)
+  def solve({drawings, boards}, 1), do: solve_1(drawings, boards)
+  def solve({drawings, boards}, 2), do: solve_2(drawings, boards)
 
   # --- <Solution Functions> ---
 
   @doc """
   """
-  def solve_1(data) do
-    {1, :not_implemented}
+  def solve_1(drawings, boards) do
+    play_stream(drawings, boards)
+    |> Enum.flat_map(&Function.identity/1)
+    |> Enum.find(&match?(%{winner?: true}, &1))
+    |> Map.get(:score)
   end
 
   @doc """
   """
-  def solve_2(data) do
-    {2, :not_implemented}
+  def solve_2(drawings, boards) do
+    [only_loser_left] =
+      play_stream(drawings, boards)
+      |> Stream.map(&Enum.reject(&1, fn board -> board.winner? end))
+      |> Enum.find(&match?([_one_left], &1))
+
+    drawings
+    |> Enum.drop(only_loser_left.turns)
+    |> Enum.reduce(only_loser_left, fn number, board -> Board.play(board, number) end)
+    |> Map.get(:score)
   end
 
   # --- </Solution Functions> ---
+
+  defp play_stream(drawings, boards) do
+    drawings
+    |> Stream.transform(boards, fn number, boards ->
+      new_boards = Enum.map(boards, &Board.play(&1, number))
+      {[new_boards], new_boards}
+    end)
+  end
 end

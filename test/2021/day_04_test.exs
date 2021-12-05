@@ -34,17 +34,17 @@ defmodule AdventOfCode.Y2021.Day04Test do
     end
 
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(1) == 10374
     end
   end
 
   describe "part 2" do
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 1924
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 24742
     end
   end
 end
