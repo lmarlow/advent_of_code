@@ -1,6 +1,6 @@
 <!-- vim: syntax=markdown -->
 
-# Advent of Code 2021-04
+# Advent of Code 2021-05
 
 ## Setup
 
@@ -18,9 +18,14 @@ input = Kino.Input.textarea("Please paste your input file:")
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-[drawings | boards] =
+lines =
+  input
+  |> Kino.Input.read()
   |> String.split("\n", trim: true)
   |> Enum.map(&String.trim/1)
+  |> Enum.map(&Regex.scan(~r/\d+/, &1))
+  |> Enum.map(&Enum.map(&1, fn [n] -> String.to_integer(n) end))
+  |> Enum.map(&Enum.chunk_every(&1, 2))
 ```
 
 ## Part 1
@@ -28,6 +33,19 @@ input = Kino.Input.textarea("Please paste your input file:")
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+points = fn
+  [x1, y1], [x2, y1] -> Enum.zip(x1..x2, List.duplicate(y1, Enum.count(x1..x2)))
+  [x1, y1], [x1, y2] -> Enum.zip(List.duplicate(x1, Enum.count(y1..y2)), y1..y2)
+  [x1, y1], [x2, y2] -> Enum.zip(x1..x2, y1..y2)
+end
+
+lines
+|> Enum.filter(fn [[x1, y1], [x2, y2]] -> x1 == x2 or y1 == y2 end)
+|> Enum.flat_map(fn [p1, p2] -> points.(p1, p2) end)
+|> Enum.reduce(%{}, fn p, acc ->
+  Map.update(acc, p, 1, &(&1 + 1))
+end)
+|> Enum.count(fn {_, n} -> n > 1 end)
 ```
 
 ## Part 2
@@ -35,4 +53,5 @@ input = Kino.Input.textarea("Please paste your input file:")
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+
 ```
