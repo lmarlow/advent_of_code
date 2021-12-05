@@ -1,0 +1,105 @@
+<!-- vim: syntax=markdown -->
+
+# Advent of Code 2021-04
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.0"},
+  {:nx, github: "elixir-nx/nx", sparse: "nx"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste your input file:")
+```
+
+```elixir
+defmodule Board do
+  defstruct rows: [], winner?: false, turns: 0, score: 0
+
+  def play(%Board{winner?: true} = board, _), do: board
+
+  def play(%Board{rows: rows} = board, number) do
+    rows =
+      Enum.map(rows, fn row ->
+        Enum.map(row, fn
+          ^number -> false
+          other -> other
+        end)
+      end)
+
+    winner? = winner?(rows)
+    %{board | rows: rows, winner?: winner?, turns: board.turns + 1, score: number * score(rows)}
+  end
+
+  defp winner?(rows) do
+    any_winning_rows = Enum.find(rows, &(not Enum.any?(&1)))
+
+    any_winning_cols =
+      Enum.find(0..4, fn col ->
+        not Enum.any?(Enum.map(rows, &Enum.at(&1, col)))
+      end)
+
+    if any_winning_rows || any_winning_cols, do: true, else: false
+  end
+
+  defp score(rows) do
+    rows
+    |> List.flatten()
+    |> Enum.filter(& &1)
+    |> Enum.sum()
+  end
+end
+```
+
+## Part 1
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+[drawings | boards] =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.trim/1)
+
+drawings = String.split(drawings, ",") |> Enum.map(&String.to_integer/1)
+
+boards =
+  boards
+  |> Enum.map(fn row -> String.split(row) |> Enum.map(&String.to_integer/1) end)
+  |> Enum.chunk_every(5)
+  |> Enum.map(&struct(Board, rows: &1))
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+play_stream =
+  drawings
+  |> Stream.transform(boards, fn number, boards ->
+    new_boards = Enum.map(boards, &Board.play(&1, number))
+    {[new_boards], new_boards}
+  end)
+
+play_stream
+|> Enum.flat_map(&Function.identity/1)
+|> Enum.find(&match?(%{winner?: true}, &1))
+```
+
+## Part 2 - Last Winning Board
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+[only_loser_left] =
+  play_stream
+  |> Stream.map(&Enum.reject(&1, fn board -> board.winner? end))
+  |> Enum.find(&match?([_one_left], &1))
+
+drawings
+|> Enum.drop(only_loser_left.turns)
+|> Enum.reduce(only_loser_left, fn number, board -> Board.play(board, number) end)
+```
