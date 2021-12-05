@@ -1,0 +1,38 @@
+<!-- vim: syntax=markdown -->
+
+# Advent of Code 2021-04
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.0"},
+  {:nx, github: "elixir-nx/nx", sparse: "nx"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste your input file:")
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+[drawings | boards] =
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.trim/1)
+```
+
+## Part 1
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+```
+
+## Part 2
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+```
