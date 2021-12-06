@@ -5,6 +5,7 @@ defmodule AdventOfCode.Helpers.Generator do
 
   @code_template "lib/helpers/templates/code.eex"
   @test_template "lib/helpers/templates/test.eex"
+  @livebook_template "lib/helpers/templates/livebook.eex"
 
   @doc """
   Generates the necessary artifacts for solving a day's problem.
@@ -56,7 +57,17 @@ defmodule AdventOfCode.Helpers.Generator do
       |> Path.join("day_#{zero_padded(day)}_test.exs")
       |> create_file(test_content)
 
-    "INPUT: #{input_file}\tCODE: #{code_file}\tTEST: #{test_file}\n"
+    # Write code files at `lib/<year>/day_<day>.ex`
+    livebook_content =
+      @livebook_template
+      |> EEx.eval_file(day: day, year: year, title: get_title(year, day))
+
+    livebook_file =
+      code_dir
+      |> Path.join("day_#{zero_padded(day)}.livemd")
+      |> create_file(livebook_content)
+
+    "INPUT: #{input_file}\tCODE: #{code_file}\tTEST: #{test_file}\tLIVEBOOK: #{livebook_file}\n"
   end
 
   defp create_file(path, content) do

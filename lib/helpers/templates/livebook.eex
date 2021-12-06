@@ -1,0 +1,44 @@
+<!-- vim: syntax=markdown -->
+
+# Advent of Code <%= year %>-<% String.pad_leading(day, 2, "0") %>
+
+##  <%= title %>
+Problem Link: https://adventofcode.com/<%= year %>/day/<%= day %>
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.0"},
+  {:nx, github: "elixir-nx/nx", sparse: "nx"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste your input file:")
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+lines =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+```
+
+## Part 1
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+
+```
+
+## Part 2
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+
+```
