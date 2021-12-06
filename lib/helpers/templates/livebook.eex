@@ -1,6 +1,6 @@
 <!-- vim: syntax=markdown -->
 
-# Advent of Code <%= year %>-<% String.pad_leading(day, 2, "0") %>
+# Advent of Code <%= year %>-<%= String.pad_leading(day, 2, "0") %>
 
 ##  <%= title %>
 Problem Link: https://adventofcode.com/<%= year %>/day/<%= day %>
