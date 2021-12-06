@@ -10,9 +10,14 @@ Problem Link: https://adventofcode.com/2021/day/6
 
 ```elixir
 Mix.install([
-  {:kino, "~> 0.4.0"},
+  {:kino, "~> 0.4.1"},
+  {:vega_lite, "~> 0.1.2"},
   {:nx, github: "elixir-nx/nx", sparse: "nx"}
 ])
+```
+
+```elixir
+alias VegaLite, as: Vl
 ```
 
 ```elixir
@@ -34,15 +39,20 @@ data =
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-data
-|> Stream.iterate(
-  &Enum.flat_map(&1, fn
-    0 -> [6, 8]
-    n -> [n - 1]
-  end)
-)
-|> Enum.at(80)
-|> length()
+day_stream =
+  data
+  |> Stream.iterate(
+    &Stream.flat_map(&1, fn
+      0 -> [6, 8]
+      n -> [n - 1]
+    end)
+  )
+
+day = 80
+
+day_stream
+|> Enum.at(day)
+|> Enum.count()
 ```
 
 ## Part 2
@@ -50,5 +60,29 @@ data
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+pop_stream =
+  data
+  |> Enum.reduce(%{}, fn age, acc -> Map.update(acc, age, 1, &(&1 + 1)) end)
+  |> Stream.iterate(fn acc ->
+    breed_pop = Map.get(acc, 0, 0)
 
+    0..7
+    |> Map.new(&{&1, Map.get(acc, &1 + 1, 0)})
+    |> Map.update(6, breed_pop, &(&1 + breed_pop))
+    |> Map.put(8, breed_pop)
+  end)
+  |> Stream.map(&(&1 |> Map.values() |> Enum.sum()))
+
+pop_stream
+|> Enum.at(256)
+```
+
+```elixir
+day = 256
+
+Vl.new(width: 400, height: 400)
+|> Vl.data_from_series(iteration: 1..day, population: pop_stream |> Enum.take(day))
+|> Vl.mark(:line)
+|> Vl.encode_field(:x, "iteration", type: :quantitative)
+|> Vl.encode_field(:y, "population", type: :quantitative)
 ```
