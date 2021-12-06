@@ -34,21 +34,25 @@ defmodule AdventOfCode.Y2021.Day06 do
   """
   def solve_1(data) do
     data
-    |> population_stream()
-    |> Enum.at(80)
+    |> population(80)
   end
 
   @doc """
   """
   def solve_2(data) do
     data
-    |> population_stream()
-    |> Enum.at(256)
+    |> population(256)
   end
 
   # --- </Solution Functions> ---
 
-  defp population_stream(initial_day) do
+  def population(data, day) do
+    data
+    |> population_stream()
+    |> Enum.at(day)
+  end
+
+  def population_stream(initial_day) do
     initial_day
     |> Enum.reduce(%{}, fn age, acc -> Map.update(acc, age, 1, &(&1 + 1)) end)
     |> Stream.iterate(fn acc ->
