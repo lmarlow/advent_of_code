@@ -7,6 +7,7 @@ defmodule AdventOfCode.Y2021.Day06Test do
   alias AdventOfCode.Y2021.Day06, as: Solution
 
   @sample_data ~S"""
+  3,4,3,1,2
   """
 
   describe "part 1" do
