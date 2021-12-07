@@ -29,13 +29,14 @@ defmodule AdventOfCode.Helpers.Generator do
 
     # Write the input data at `priv/input_files`
     input_file_path = Path.join(input_dir, "#{year}_#{zero_padded(day)}.txt")
+
     build_priv_file_path = Path.join(build_priv_dir, "#{year}_#{zero_padded(day)}.txt")
 
     input_file =
       input_file_path
       |> create_input_file(year, day)
 
-    File.cp!(input_file_path, build_priv_file_path)
+    Mix.Generator.copy_file(input_file_path, build_priv_file_path)
 
     # Write code files at `lib/<year>/day_<day>.ex`
     code_content =
@@ -71,9 +72,7 @@ defmodule AdventOfCode.Helpers.Generator do
   end
 
   defp create_file(path, content) do
-    unless File.exists?(path) do
-      File.write(path, content)
-    end
+    Mix.Generator.create_file(path, content)
   end
 
   defp fetch_cookie(year, day) do
@@ -90,10 +89,8 @@ defmodule AdventOfCode.Helpers.Generator do
   end
 
   defp create_input_file(path, year, day) do
-    with {:ok, data} <- fetch_cookie(year, day),
-         {:ok, file} <- File.open(path, [:write]),
-         :ok <- IO.write(file, data) do
-      File.close(file)
+    with {:ok, data} <- fetch_cookie(year, day) do
+      Mix.Generator.create_file(path, data)
     end
   end
 
