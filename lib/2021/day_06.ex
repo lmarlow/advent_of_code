@@ -50,19 +50,19 @@ defmodule AdventOfCode.Y2021.Day06 do
     data
     |> population_stream()
     |> Enum.at(day)
+    |> Tuple.sum()
   end
 
   def population_stream(initial_day) do
-    initial_day
-    |> Enum.reduce(%{}, fn age, acc -> Map.update(acc, age, 1, &(&1 + 1)) end)
-    |> Stream.iterate(fn acc ->
-      breed_pop = Map.get(acc, 0, 0)
+    day_pops = Enum.frequencies(initial_day)
 
-      0..7
-      |> Map.new(&{&1, Map.get(acc, &1 + 1, 0)})
-      |> Map.update(6, breed_pop, &(&1 + breed_pop))
-      |> Map.put(8, breed_pop)
+    acc =
+      0..8
+      |> Enum.map(&Map.get(day_pops, &1, 0))
+      |> List.to_tuple()
+
+    Stream.iterate(acc, fn {d0, d1, d2, d3, d4, d5, d6, d7, d8} ->
+      {d1, d2, d3, d4, d5, d6, d7 + d0, d8, d0}
     end)
-    |> Stream.map(&(&1 |> Map.values() |> Enum.sum()))
   end
 end
