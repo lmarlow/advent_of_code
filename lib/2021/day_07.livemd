@@ -55,9 +55,11 @@ t =
 ```
 
 ```elixir
-possible_pos = min..max |> Enum.map(&List.wrap/1) |> Nx.tensor()
+possible_pos = {Enum.count(min..max), 1} |> Nx.iota() |> Nx.subtract(min)
 
-t |> Nx.subtract(possible_pos) |> Nx.abs() |> Nx.sum(axes: [1]) |> Nx.reduce_min()
+distances = t |> Nx.subtract(possible_pos) |> Nx.abs()
+
+distances |> Nx.sum(axes: [1]) |> Nx.reduce_min()
 ```
 
 ## Part 2
@@ -65,5 +67,11 @@ t |> Nx.subtract(possible_pos) |> Nx.abs() |> Nx.sum(axes: [1]) |> Nx.reduce_min
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+one = Nx.tensor(1)
 
+distances
+|> Nx.multiply(Nx.add(distances, 1))
+|> Nx.right_shift(Nx.tensor(1))
+|> Nx.sum(axes: [1])
+|> Nx.reduce_min()
 ```
