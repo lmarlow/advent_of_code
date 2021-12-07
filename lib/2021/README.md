@@ -10,7 +10,7 @@
 |  4  |     [Giant Squid](https://adventofcode.com/2021/day/4)      |    :star2: | [day_04.ex](/lib/2021/day_04.ex) | [day_04_test.exs](/test/2021/day_04_test.exs) |
 |  5  | [Hydrothermal Venture](https://adventofcode.com/2021/day/5) |    :star2: | [day_05.ex](/lib/2021/day_05.ex) | [day_05_test.exs](/test/2021/day_05_test.exs) |
 |  6  |     [Lanternfish](https://adventofcode.com/2021/day/6)      |    :star2: | [day_06.ex](/lib/2021/day_06.ex) | [day_06_test.exs](/test/2021/day_06_test.exs) |
-|  7  |        [Day 7](https://adventofcode.com/2021/day/7)         |            | [day_07.ex](/lib/2021/day_07.ex) | [day_07_test.exs](/test/2021/day_07_test.exs) |
+|  7  |        [The Treachery of Whales](https://adventofcode.com/2021/day/7)         | :star2: | [day_07.ex](/lib/2021/day_07.ex) | [day_07_test.exs](/test/2021/day_07_test.exs) |
 |  8  |        [Day 8](https://adventofcode.com/2021/day/8)         |            | [day_08.ex](/lib/2021/day_08.ex) | [day_08_test.exs](/test/2021/day_08_test.exs) |
 |  9  |        [Day 9](https://adventofcode.com/2021/day/9)         |            | [day_09.ex](/lib/2021/day_09.ex) | [day_09_test.exs](/test/2021/day_09_test.exs) |
 | 10  |       [Day 10](https://adventofcode.com/2021/day/10)        |            | [day_10.ex](/lib/2021/day_10.ex) | [day_10_test.exs](/test/2021/day_10_test.exs) |

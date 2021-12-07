@@ -19,7 +19,8 @@ defmodule AdventOfCode.Y2021.Day07 do
 
   def parse(data) do
     data
-    |> String.split("\n", trim: true)
+    |> String.split([",", "\n"], trim: true)
+    |> Enum.map(&String.to_integer/1)
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -30,13 +31,38 @@ defmodule AdventOfCode.Y2021.Day07 do
   @doc """
   """
   def solve_1(data) do
-    {1, :not_implemented}
+    {min, max} = data |> Enum.min_max()
+
+    possible_pos = {Enum.count(min..max), 1} |> Nx.iota() |> Nx.subtract(min)
+
+    data
+    |> Nx.tensor()
+    |> Nx.subtract(possible_pos)
+    |> Nx.abs()
+    |> Nx.sum(axes: [1])
+    |> Nx.reduce_min()
+    |> Nx.to_number()
   end
 
   @doc """
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    {min, max} = data |> Enum.min_max()
+
+    possible_pos = {Enum.count(min..max), 1} |> Nx.iota() |> Nx.subtract(min)
+
+    distances =
+      data
+      |> Nx.tensor()
+      |> Nx.subtract(possible_pos)
+      |> Nx.abs()
+
+    distances
+    |> Nx.multiply(Nx.add(distances, 1))
+    |> Nx.right_shift(Nx.tensor(1))
+    |> Nx.sum(axes: [1])
+    |> Nx.reduce_min()
+    |> Nx.to_number()
   end
 
   # --- </Solution Functions> ---
