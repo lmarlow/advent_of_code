@@ -2,7 +2,8 @@
 
 # Advent of Code 2021-07
 
-##  --- Day 7: The Treachery of Whales ---
+## Day 7: The Treachery of Whales
+
 Problem Link: https://adventofcode.com/2021/day/7
 
 ## Setup
@@ -26,10 +27,19 @@ input = Kino.Input.textarea("Please paste your input file:")
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-lines =
+data =
   input
   |> Kino.Input.read()
-  |> String.split("\n", trim: true)
+  |> String.split([",", "\n"], trim: true)
+  |> Enum.map(&String.to_integer/1)
+```
+
+```elixir
+Vl.new(width: 400, height: 400)
+|> Vl.data_from_series(x: 1..length(data), y: data)
+|> Vl.mark(:point)
+|> Vl.encode_field(:x, "x", type: :quantitative)
+|> Vl.encode_field(:y, "y", type: :quantitative)
 ```
 
 ## Part 1
@@ -37,7 +47,17 @@ lines =
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+{min, max} = data |> Enum.min_max()
 
+t =
+  data
+  |> Nx.tensor()
+```
+
+```elixir
+possible_pos = min..max |> Enum.map(&List.wrap/1) |> Nx.tensor()
+
+t |> Nx.subtract(possible_pos) |> Nx.abs() |> Nx.sum(axes: [1]) |> Nx.reduce_min()
 ```
 
 ## Part 2
