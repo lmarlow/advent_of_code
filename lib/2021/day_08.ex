@@ -33,8 +33,8 @@ defmodule AdventOfCode.Y2021.Day08 do
     |> Enum.map(fn line ->
       line
       |> String.split([" ", "|"], trim: true)
-      |> Enum.map(&String.to_charlist/1)
-      |> Enum.map(&Enum.sort/1)
+      |> Enum.map(&String.graphemes/1)
+      |> Enum.map(&MapSet.new/1)
       |> Enum.split(10)
     end)
   end
@@ -49,7 +49,7 @@ defmodule AdventOfCode.Y2021.Day08 do
   def solve_1(data) do
     data
     |> Enum.flat_map(fn {_notes, display} -> display end)
-    |> Enum.map(&length/1)
+    |> Enum.map(&Enum.count/1)
     |> Enum.count(&(&1 in [2, 3, 4, 7]))
   end
 
@@ -71,18 +71,51 @@ defmodule AdventOfCode.Y2021.Day08 do
     |> Integer.undigits()
   end
 
-  defp digit_map(_notes) do
-    %{
-      'abcdeg' => 0,
-      'ab' => 1,
-      'acdfg' => 2,
-      'abcdf' => 3,
-      'abef' => 4,
-      'bcdef' => 5,
-      'bcdefg' => 6,
-      'abd' => 7,
-      'abcdefg' => 8,
-      'abcdef' => 9
-    }
+  defp digit_map(notes) do
+    [one, seven, four, eight] =
+      notes
+      |> Enum.filter(&(Enum.count(&1) in [2, 3, 4, 7]))
+      |> Enum.sort_by(&Enum.count/1)
+
+    zero_six_nine = Enum.filter(notes, &(Enum.count(&1) == 6))
+    two_three_five = Enum.filter(notes, &(Enum.count(&1) == 5))
+
+    {[three], two_five} = Enum.split_with(two_three_five, &MapSet.subset?(seven, &1))
+
+    bd_segs = MapSet.difference(four, one)
+
+    b_seg =
+      two_five
+      |> Enum.find(&(MapSet.difference(bd_segs, &1) |> Enum.count() > 0))
+      |> then(&MapSet.difference(bd_segs, &1))
+
+    {[five], [two]} = Enum.split_with(two_five, &MapSet.subset?(b_seg, &1))
+
+    d_seg = MapSet.difference(bd_segs, b_seg)
+
+    {[zero], six_nine} = Enum.split_with(zero_six_nine, &MapSet.disjoint?(d_seg, &1))
+    {[nine], [six]} = Enum.split_with(six_nine, &MapSet.subset?(one, &1))
+
+    [zero, one, two, three, four, five, six, seven, eight, nine]
+    |> Enum.with_index()
+    |> Map.new()
   end
+
+  @canonical_map [
+                   'abcefg',
+                   'cf',
+                   'acdeg',
+                   'acdfg',
+                   'bcdf',
+                   'abdfg',
+                   'abdefg',
+                   'acf',
+                   'abcdefg',
+                   'abcdfg'
+                 ]
+                 |> Enum.map(&MapSet.new/1)
+                 |> Enum.with_index()
+                 |> Map.new()
+
+  def canonical_map(), do: @canonical_map
 end

@@ -38,11 +38,11 @@ defmodule AdventOfCode.Y2021.Day08Test do
     end
 
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 61229
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 1_010_472
     end
   end
 end
