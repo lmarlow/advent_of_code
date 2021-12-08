@@ -30,6 +30,11 @@ defmodule AdventOfCode.Y2021.Day08 do
   def parse(data) do
     data
     |> String.split("\n", trim: true)
+    |> Enum.map(fn line ->
+      line
+      |> String.split([" ", "|"], trim: true)
+      |> Enum.split(10)
+    end)
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -38,27 +43,12 @@ defmodule AdventOfCode.Y2021.Day08 do
   # --- <Solution Functions> ---
 
   @doc """
-  Solved with cut | grep | wc -l and adding
-
-  ```shell
-  ❯ cut -d' ' -f 12- priv/input_files/2021_08.txt | grep -E '\<\w\w\w\w\w\w\w\w\>' -o | wc -l
-         0
-
-  ❯ cut -d' ' -f 12- priv/input_files/2021_08.txt | grep -E '\<\w\w\w\w\w\w\w\>' -o | wc -l
-        78
-
-  ❯ cut -d' ' -f 12- priv/input_files/2021_08.txt | grep -E '\<\w\w\w\w\>' -o | wc -l
-        78
-
-  ❯ cut -d' ' -f 12- priv/input_files/2021_08.txt | grep -E '\<\w\w\w\>' -o | wc -l
-        82
-
-  ❯ cut -d' ' -f 12- priv/input_files/2021_08.txt | grep -E '\<\w\w\>' -o | wc -l
-        92
-  ````
   """
-  def solve_1(_data) do
-    330
+  def solve_1(data) do
+    data
+    |> Enum.flat_map(fn {_notes, displays} -> displays end)
+    |> Enum.map(&String.length/1)
+    |> Enum.count(&(&1 in [2, 3, 4, 7]))
   end
 
   @doc """
