@@ -33,6 +33,8 @@ defmodule AdventOfCode.Y2021.Day08 do
     |> Enum.map(fn line ->
       line
       |> String.split([" ", "|"], trim: true)
+      |> Enum.map(&String.to_charlist/1)
+      |> Enum.map(&Enum.sort/1)
       |> Enum.split(10)
     end)
   end
@@ -46,16 +48,41 @@ defmodule AdventOfCode.Y2021.Day08 do
   """
   def solve_1(data) do
     data
-    |> Enum.flat_map(fn {_notes, displays} -> displays end)
-    |> Enum.map(&String.length/1)
+    |> Enum.flat_map(fn {_notes, display} -> display end)
+    |> Enum.map(&length/1)
     |> Enum.count(&(&1 in [2, 3, 4, 7]))
   end
 
   @doc """
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    data
+    |> Enum.map(&number/1)
+    |> Enum.sum()
   end
 
   # --- </Solution Functions> ---
+
+  defp number({notes, display}) do
+    digit_map = digit_map(notes)
+
+    display
+    |> Enum.map(&digit_map[&1])
+    |> Integer.undigits()
+  end
+
+  defp digit_map(_notes) do
+    %{
+      'abcdeg' => 0,
+      'ab' => 1,
+      'acdfg' => 2,
+      'abcdf' => 3,
+      'abef' => 4,
+      'bcdef' => 5,
+      'bcdefg' => 6,
+      'abd' => 7,
+      'abcdefg' => 8,
+      'abcdef' => 9
+    }
+  end
 end

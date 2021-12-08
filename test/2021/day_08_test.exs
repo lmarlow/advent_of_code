@@ -30,6 +30,13 @@ defmodule AdventOfCode.Y2021.Day08Test do
   end
 
   describe "part 2" do
+    test "minimal" do
+      assert Solution.run(
+               "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf",
+               2
+             ) == 5353
+    end
+
     test "example" do
       assert Solution.run(@sample_data, 2) == nil
     end
