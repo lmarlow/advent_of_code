@@ -50,12 +50,18 @@ defmodule AdventOfCode.Y2021.Day10Test do
   end
 
   describe "part 2" do
+    test "one line" do
+      data = "<{([{{}}[<[[[<>{}]]]>[]]"
+      assert {:error, :unfinished, unfinished_stack} = Solution.interpret(data)
+      assert "])}>" == Enum.join(unfinished_stack)
+    end
+
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 288_957
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 1_685_293_086
     end
   end
 end

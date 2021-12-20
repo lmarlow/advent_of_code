@@ -41,54 +41,80 @@ defmodule AdventOfCode.Y2021.Day10 do
   """
   def solve_1(data) do
     data
-    |> Enum.map(&first_illegal_instruction/1)
-    |> Enum.map(&score/1)
+    |> Enum.map(&interpret/1)
+    |> Enum.filter(&match?({:error, :corrupt, _}, &1))
+    |> Enum.map(&elem(&1, 2))
+    |> Enum.map(&score_corrupt/1)
     |> Enum.sum()
   end
 
   @doc """
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    data
+    |> Enum.map(&interpret/1)
+    |> Enum.filter(&match?({:error, :unfinished, _}, &1))
+    |> Enum.map(&elem(&1, 2))
+    |> Enum.map(&score_completion/1)
+    |> total_completion_score()
   end
 
   # --- </Solution Functions> ---
 
-  defp first_illegal_instruction(bin) do
-    first_illegal_instruction(bin, [])
+  def interpret(code) do
+    interpret(code, [])
   end
 
-  defp first_illegal_instruction(<<>>, _stack) do
-    ""
+  defp interpret(<<>>, []) do
+    :ok
   end
 
-  defp first_illegal_instruction("(" <> rest, stack) do
-    first_illegal_instruction(rest, [")" | stack])
+  defp interpret(<<>>, [_ | _] = unfinished_stack) do
+    {:error, :unfinished, unfinished_stack}
   end
 
-  defp first_illegal_instruction("[" <> rest, stack) do
-    first_illegal_instruction(rest, ["]" | stack])
+  defp interpret("(" <> rest, stack) do
+    interpret(rest, [")" | stack])
   end
 
-  defp first_illegal_instruction("{" <> rest, stack) do
-    first_illegal_instruction(rest, ["}" | stack])
+  defp interpret("[" <> rest, stack) do
+    interpret(rest, ["]" | stack])
   end
 
-  defp first_illegal_instruction("<" <> rest, stack) do
-    first_illegal_instruction(rest, [">" | stack])
+  defp interpret("{" <> rest, stack) do
+    interpret(rest, ["}" | stack])
   end
 
-  defp first_illegal_instruction(<<close::binary-size(1), rest::binary>>, [close | stack]) do
-    first_illegal_instruction(rest, stack)
+  defp interpret("<" <> rest, stack) do
+    interpret(rest, [">" | stack])
   end
 
-  defp first_illegal_instruction(<<wrong_close::binary-size(1), _rest::binary>>, _stack) do
-    wrong_close
+  defp interpret(<<close::binary-size(1), rest::binary>>, [close | stack]) do
+    interpret(rest, stack)
   end
 
-  defp score(")"), do: 3
-  defp score("]"), do: 57
-  defp score("}"), do: 1197
-  defp score(">"), do: 25137
-  defp score(_), do: 0
+  defp interpret(<<wrong_close::binary-size(1), _rest::binary>>, _stack) do
+    {:error, :corrupt, wrong_close}
+  end
+
+  defp score_corrupt(")"), do: 3
+  defp score_corrupt("]"), do: 57
+  defp score_corrupt("}"), do: 1197
+  defp score_corrupt(">"), do: 25137
+  defp score_corrupt(_), do: 0
+
+  defp score_completion(code) do
+    Enum.reduce(code, 0, fn char, score ->
+      score * 5 + unfinished_point(char)
+    end)
+  end
+
+  def total_completion_score(scores) do
+    Enum.at(Enum.sort(scores), div(length(scores), 2))
+  end
+
+  defp unfinished_point(")"), do: 1
+  defp unfinished_point("]"), do: 2
+  defp unfinished_point("}"), do: 3
+  defp unfinished_point(">"), do: 4
 end

@@ -13,7 +13,7 @@
 |  7  | [The Treachery of Whales](https://adventofcode.com/2021/day/7)         | :star2: | [day_07.ex](/lib/2021/day_07.ex) | [day_07_test.exs](/test/2021/day_07_test.exs) |
 |  8  | [Seven Segment Search](https://adventofcode.com/2021/day/8)         | :star2: | [day_08.ex](/lib/2021/day_08.ex) | [day_08_test.exs](/test/2021/day_08_test.exs) |
 |  9  | [Smoke Basin](https://adventofcode.com/2021/day/9)         | :star2: | [day_09.ex](/lib/2021/day_09.ex) | [day_09_test.exs](/test/2021/day_09_test.exs) |
-| 10  |       [Syntax Scoring](https://adventofcode.com/2021/day/10)        |            | [day_10.ex](/lib/2021/day_10.ex) | [day_10_test.exs](/test/2021/day_10_test.exs) |
+| 10  |       [Syntax Scoring](https://adventofcode.com/2021/day/10)        | :star2: | [day_10.ex](/lib/2021/day_10.ex) | [day_10_test.exs](/test/2021/day_10_test.exs) |
 | 11  |       [Day 11](https://adventofcode.com/2021/day/11)        |            | [day_11.ex](/lib/2021/day_11.ex) | [day_11_test.exs](/test/2021/day_11_test.exs) |
 | 12  |       [Day 12](https://adventofcode.com/2021/day/12)        |            | [day_12.ex](/lib/2021/day_12.ex) | [day_12_test.exs](/test/2021/day_12_test.exs) |
 | 13  |       [Day 13](https://adventofcode.com/2021/day/13)        |            | [day_13.ex](/lib/2021/day_13.ex) | [day_13_test.exs](/test/2021/day_13_test.exs) |
