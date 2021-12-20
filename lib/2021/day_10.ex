@@ -9,6 +9,16 @@ defmodule AdventOfCode.Y2021.Day10 do
   Sample data:
 
   ```
+  [({(<(())[]>[[{[]{<()<>>
+  [(()[<>])]({[<{<<[]>>(
+  {([(<{}[<>[]}>{[]{[(<()>
+  (((({<>}<{<{<>}{[]{[]{}
+  [[<[([]))<([[{}[[()]]]
+  [{[{({}]{}}([{[{{{}}([]
+  {<[[]]>}<{[{[{[]{()[[[]
+  [<(<(<(<{}))><([]([]()
+  <{([([[(<>()){}]>(<<{{
+  <{([{{}}[<[[[<>{}]]]>[]]
   ```
   """
   def run(data \\ input!(), part)
@@ -30,7 +40,10 @@ defmodule AdventOfCode.Y2021.Day10 do
   @doc """
   """
   def solve_1(data) do
-    {1, :not_implemented}
+    data
+    |> Enum.map(&first_illegal_instruction/1)
+    |> Enum.map(&score/1)
+    |> Enum.sum()
   end
 
   @doc """
@@ -40,4 +53,42 @@ defmodule AdventOfCode.Y2021.Day10 do
   end
 
   # --- </Solution Functions> ---
+
+  defp first_illegal_instruction(bin) do
+    first_illegal_instruction(bin, [])
+  end
+
+  defp first_illegal_instruction(<<>>, _stack) do
+    ""
+  end
+
+  defp first_illegal_instruction("(" <> rest, stack) do
+    first_illegal_instruction(rest, [")" | stack])
+  end
+
+  defp first_illegal_instruction("[" <> rest, stack) do
+    first_illegal_instruction(rest, ["]" | stack])
+  end
+
+  defp first_illegal_instruction("{" <> rest, stack) do
+    first_illegal_instruction(rest, ["}" | stack])
+  end
+
+  defp first_illegal_instruction("<" <> rest, stack) do
+    first_illegal_instruction(rest, [">" | stack])
+  end
+
+  defp first_illegal_instruction(<<close::binary-size(1), rest::binary>>, [close | stack]) do
+    first_illegal_instruction(rest, stack)
+  end
+
+  defp first_illegal_instruction(<<wrong_close::binary-size(1), _rest::binary>>, _stack) do
+    wrong_close
+  end
+
+  defp score(")"), do: 3
+  defp score("]"), do: 57
+  defp score("}"), do: 1197
+  defp score(">"), do: 25137
+  defp score(_), do: 0
 end

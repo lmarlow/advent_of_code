@@ -2,7 +2,8 @@
 
 # Advent of Code 2021-10
 
-##  --- Day 10: Syntax Scoring ---
+## --- Day 10: Syntax Scoring ---
+
 Problem Link: https://adventofcode.com/2021/day/10
 
 ## Setup
@@ -30,6 +31,7 @@ lines =
   input
   |> Kino.Input.read()
   |> String.split("\n", trim: true)
+  |> Enum.map(&String.to_charlist/1)
 ```
 
 ## Part 1
@@ -37,7 +39,7 @@ lines =
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-
+defmodule(Stack)
 ```
 
 ## Part 2
