@@ -48,7 +48,7 @@ defmodule FlashGrid do
   def flashes(grid, steps) do
     for _step <- 1..steps, reduce: {grid, 0} do
       {grid, flash_count} ->
-        stepped = FlashGrid.step(grid)
+        stepped = step(grid)
         new_flashes = stepped |> Nx.logical_not() |> Nx.sum() |> Nx.to_number()
         {stepped, flash_count + new_flashes}
     end
