@@ -102,5 +102,10 @@ grid
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+all_flashed = Nx.broadcast(0, Nx.shape(grid))
 
+grid
+|> Stream.iterate(&FlashGrid.step/1)
+|> Stream.with_index()
+|> Enum.find(fn {step, _} -> step == all_flashed end)
 ```
