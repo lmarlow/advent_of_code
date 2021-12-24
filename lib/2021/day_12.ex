@@ -40,7 +40,10 @@ defmodule AdventOfCode.Y2021.Day12 do
   @doc """
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    data
+    |> nodes()
+    |> paths(2)
+    |> length()
   end
 
   # --- </Solution Functions> ---
@@ -58,27 +61,42 @@ defmodule AdventOfCode.Y2021.Day12 do
     |> Map.delete("end")
   end
 
-  def paths(nodes) do
+  def paths(nodes, max_small_visits \\ 1) do
     "start"
-    |> paths(nodes, [])
+    |> paths(nodes, [], max_small_visits)
     |> List.flatten()
   end
 
-  def paths("end", _nodes, path), do: ["end" | path] |> Enum.reverse() |> List.to_tuple()
+  def paths("end", _nodes, path, _), do: ["end" | path] |> Enum.reverse() |> List.to_tuple()
 
-  def paths(current_node, nodes, path) do
-    if allowed?(current_node, path) do
+  def paths(current_node, nodes, path, max_small_visits) do
+    if allowed?(current_node, path, max_small_visits) do
       path = [current_node | path]
 
       for next <- nodes[current_node] do
-        paths(next, nodes, path)
+        paths(next, nodes, path, max_small_visits)
       end
     else
       []
     end
   end
 
-  defp allowed?(node, path) do
-    String.match?(node, ~r/[A-Z]+/) or node not in path
+  defp allowed?(node, path, max_small_visits) do
+    cond do
+      big?(node) -> true
+      node not in path -> true
+      none_max?(path, max_small_visits) -> true
+      :else -> false
+    end
   end
+
+  def none_max?(path, max_small_visits) do
+    path
+    |> Enum.filter(&small?/1)
+    |> Enum.frequencies()
+    |> Enum.all?(fn {_k, n} -> n < max_small_visits end)
+  end
+
+  defp big?(node), do: String.match?(node, ~r/[A-Z]+/)
+  defp small?(node), do: not big?(node)
 end

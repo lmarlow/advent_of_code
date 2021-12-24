@@ -69,12 +69,43 @@ defmodule AdventOfCode.Y2021.Day12Test do
   end
 
   describe "part 2" do
+    test "simple 36" do
+      data = """
+      A-start
+      start-b
+      A-c
+      A-b
+      b-d
+      A-end
+      b-end
+      """
+
+      assert Solution.run(data, 2) == 36
+    end
+
+    test "simple 103" do
+      data = """
+      dc-end
+      HN-start
+      start-kj
+      dc-start
+      dc-HN
+      LN-dc
+      HN-end
+      kj-sa
+      kj-HN
+      kj-dc
+      """
+
+      assert Solution.run(data, 2) == 103
+    end
+
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 3509
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 131_254
     end
   end
 end

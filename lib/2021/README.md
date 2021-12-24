@@ -15,7 +15,7 @@
 |  9  | [Smoke Basin](https://adventofcode.com/2021/day/9)         | :star2: | [day_09.ex](/lib/2021/day_09.ex) | [day_09_test.exs](/test/2021/day_09_test.exs) |
 | 10  |       [Syntax Scoring](https://adventofcode.com/2021/day/10)        | :star2: | [day_10.ex](/lib/2021/day_10.ex) | [day_10_test.exs](/test/2021/day_10_test.exs) |
 | 11  |       [Dumbo Octopus](https://adventofcode.com/2021/day/11)        | :star2: | [day_11.ex](/lib/2021/day_11.ex) | [day_11_test.exs](/test/2021/day_11_test.exs) |
-| 12  |       [Day 12](https://adventofcode.com/2021/day/12)        |            | [day_12.ex](/lib/2021/day_12.ex) | [day_12_test.exs](/test/2021/day_12_test.exs) |
+| 12  |       [Passage Pathing](https://adventofcode.com/2021/day/12)        | :star2: | [day_12.ex](/lib/2021/day_12.ex) | [day_12_test.exs](/test/2021/day_12_test.exs) |
 | 13  |       [Day 13](https://adventofcode.com/2021/day/13)        |            | [day_13.ex](/lib/2021/day_13.ex) | [day_13_test.exs](/test/2021/day_13_test.exs) |
 | 14  |       [Day 14](https://adventofcode.com/2021/day/14)        |            | [day_14.ex](/lib/2021/day_14.ex) | [day_14_test.exs](/test/2021/day_14_test.exs) |
 | 15  |       [Day 15](https://adventofcode.com/2021/day/15)        |            | [day_15.ex](/lib/2021/day_15.ex) | [day_15_test.exs](/test/2021/day_15_test.exs) |
