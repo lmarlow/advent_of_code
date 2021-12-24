@@ -2,7 +2,8 @@
 
 # Advent of Code 2021-12
 
-##  --- Day 12: Passage Pathing ---
+## --- Day 12: Passage Pathing ---
+
 Problem Link: https://adventofcode.com/2021/day/12
 
 ## Setup
@@ -30,6 +31,49 @@ lines =
   input
   |> Kino.Input.read()
   |> String.split("\n", trim: true)
+  |> Enum.map(&String.split(&1, "-"))
+```
+
+```elixir
+defmodule Pathing do
+  def nodes(lines) do
+    lines
+    |> Enum.reduce(%{}, fn
+      [a, b], acc ->
+        acc
+        |> Map.update(a, [b], &[b | &1])
+        |> Map.update(b, [a], &[a | &1])
+    end)
+    |> Enum.map(fn {k, v} -> {k, v -- ["start"]} end)
+    |> Map.new()
+    |> Map.delete("end")
+  end
+
+  def paths(nodes) do
+    "start"
+    |> paths(nodes, [])
+    |> List.flatten()
+  end
+
+  def paths("end", _nodes, path), do: ["end" | path] |> Enum.reverse() |> List.to_tuple()
+
+  def paths(current_node, nodes, path) do
+    if allowed?(current_node, path) do
+      path = [current_node | path]
+
+      for next <- nodes[current_node] do
+        paths(next, nodes, path)
+      end
+    else
+      []
+    end
+  end
+
+  defp allowed?(node, path) do
+    (String.match?(node, ~r/[A-Z]+/) or node not in path)
+    |> IO.inspect(label: inspect({node, path}))
+  end
+end
 ```
 
 ## Part 1
@@ -37,7 +81,10 @@ lines =
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-
+lines
+|> Pathing.nodes()
+|> IO.inspect(label: :nodes)
+|> Pathing.paths()
 ```
 
 ## Part 2
