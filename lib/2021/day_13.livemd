@@ -2,7 +2,8 @@
 
 # Advent of Code 2021-13
 
-##  --- Day 13: Transparent Origami ---
+## --- Day 13: Transparent Origami ---
+
 Problem Link: https://adventofcode.com/2021/day/13
 
 ## Setup
@@ -29,7 +30,43 @@ input = Kino.Input.textarea("Please paste your input file:")
 lines =
   input
   |> Kino.Input.read()
-  |> String.split("\n", trim: true)
+  |> String.split(["\n"], trim: true)
+
+{dots, folds} = lines |> Enum.split_while(&String.contains?(&1, ","))
+
+dots =
+  dots
+  |> Enum.map(&(String.split(&1, ",") |> Enum.map(fn n -> String.to_integer(n) end)))
+  |> MapSet.new()
+
+folds =
+  folds
+  |> Enum.map(&String.slice(&1, 11..-1))
+  |> Enum.map(&String.split(&1, "="))
+  |> Enum.map(fn [axis, n] -> [axis, String.to_integer(n)] end)
+```
+
+```elixir
+defmodule Folds do
+  def print(points) do
+    {xs, ys} =
+      points
+      |> Enum.map(&List.to_tuple/1)
+      |> Enum.unzip()
+
+    {cols, rows} = {Enum.max(xs) + 1, Enum.max(ys) + 1}
+
+    indices = points |> Enum.map(fn [col, row] -> [row, col] end) |> Nx.tensor()
+
+    Nx.broadcast(0, {rows, cols})
+    |> Nx.indexed_add(indices, Nx.tensor(List.duplicate(1, Enum.count(points))))
+    |> IO.inspect(limit: :infinity)
+
+    :ok
+  end
+end
+
+Folds.print(dots)
 ```
 
 ## Part 1
@@ -37,7 +74,24 @@ lines =
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+[[axis, location] | _rest] = folds
 
+for [x, y] <- dots, into: MapSet.new() do
+  if axis == "x" do
+    if x > location do
+      [2 * location - x, y]
+    else
+      [x, y]
+    end
+  else
+    if y > location do
+      [x, 2 * location - y]
+    else
+      [x, y]
+    end
+  end
+end
+|> MapSet.size()
 ```
 
 ## Part 2
