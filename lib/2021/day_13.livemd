@@ -48,6 +48,24 @@ folds =
 
 ```elixir
 defmodule Folds do
+  def fold(points, axis, location) do
+    for [x, y] <- points, into: MapSet.new() do
+      if axis == "x" do
+        if x > location do
+          [2 * location - x, y]
+        else
+          [x, y]
+        end
+      else
+        if y > location do
+          [x, 2 * location - y]
+        else
+          [x, y]
+        end
+      end
+    end
+  end
+
   def print(points) do
     {xs, ys} =
       points
@@ -65,8 +83,6 @@ defmodule Folds do
     :ok
   end
 end
-
-Folds.print(dots)
 ```
 
 ## Part 1
@@ -76,21 +92,8 @@ Folds.print(dots)
 ```elixir
 [[axis, location] | _rest] = folds
 
-for [x, y] <- dots, into: MapSet.new() do
-  if axis == "x" do
-    if x > location do
-      [2 * location - x, y]
-    else
-      [x, y]
-    end
-  else
-    if y > location do
-      [x, 2 * location - y]
-    else
-      [x, y]
-    end
-  end
-end
+dots
+|> Folds.fold(axis, location)
 |> MapSet.size()
 ```
 
@@ -99,5 +102,10 @@ end
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-
+for [axis, location] <- folds, reduce: dots do
+  points ->
+    points
+    |> Folds.fold(axis, location)
+end
+|> Folds.print()
 ```

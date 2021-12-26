@@ -36,7 +36,7 @@ defmodule AdventOfCode.Y2021.Day13Test do
     end
 
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(1) == 704
     end
   end
 
@@ -46,7 +46,7 @@ defmodule AdventOfCode.Y2021.Day13Test do
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == "HGAJBEHC"
     end
   end
 end
