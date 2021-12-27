@@ -41,44 +41,40 @@ dots =
 
 folds =
   folds
-  |> Enum.map(&String.slice(&1, 11..-1))
-  |> Enum.map(&String.split(&1, "="))
-  |> Enum.map(fn [axis, n] -> [axis, String.to_integer(n)] end)
+  |> Enum.map(fn "fold along " <> fold -> String.split(fold, "=") end)
+  |> Enum.map(fn [axis, n] -> [String.to_atom(axis), String.to_integer(n)] end)
 ```
 
 ```elixir
 defmodule Folds do
-  def fold(points, axis, location) do
-    for [x, y] <- points, into: MapSet.new() do
-      if axis == "x" do
-        if x > location do
-          [2 * location - x, y]
-        else
-          [x, y]
-        end
-      else
-        if y > location do
-          [x, 2 * location - y]
-        else
-          [x, y]
-        end
-      end
+  def fold(points, folds) do
+    for [axis, location] <- folds, reduce: points do
+      points ->
+        points
+        |> fold_once(axis, location)
     end
   end
 
+  def fold_once(points, axis, location) do
+    for point <- points, into: MapSet.new() do
+      folder(point, axis, location)
+    end
+  end
+
+  def folder([x, y], :x, fold_line), do: [fold_line - abs(x - fold_line), y]
+  def folder([x, y], :y, fold_line), do: [x, fold_line - abs(y - fold_line)]
+
   def print(points) do
-    {xs, ys} =
-      points
-      |> Enum.map(&List.to_tuple/1)
-      |> Enum.unzip()
+    {[cols, _], [_, rows]} =
+      {Enum.max_by(points, fn [x, _] -> x end), Enum.max_by(points, fn [_, y] -> y end)}
 
-    {cols, rows} = {Enum.max(xs) + 1, Enum.max(ys) + 1}
+    for y <- 0..rows do
+      for x <- 0..cols do
+        if [x, y] in points, do: IO.write(" # "), else: IO.write("   ")
+      end
 
-    indices = points |> Enum.map(fn [col, row] -> [row, col] end) |> Nx.tensor()
-
-    Nx.broadcast(0, {rows, cols})
-    |> Nx.indexed_add(indices, Nx.tensor(List.duplicate(1, Enum.count(points))))
-    |> IO.inspect(limit: :infinity)
+      IO.write("\n")
+    end
 
     :ok
   end
@@ -90,10 +86,8 @@ end
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-[[axis, location] | _rest] = folds
-
 dots
-|> Folds.fold(axis, location)
+|> Folds.fold(Enum.take(folds, 1))
 |> MapSet.size()
 ```
 
@@ -102,10 +96,7 @@ dots
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-for [axis, location] <- folds, reduce: dots do
-  points ->
-    points
-    |> Folds.fold(axis, location)
-end
+dots
+|> Folds.fold(folds)
 |> Folds.print()
 ```
