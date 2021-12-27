@@ -104,15 +104,38 @@ Folds.print(folded)
 ```
 
 ```elixir
-Vl.new(width: 800, height: 150)
-|> Vl.data_from_values(Enum.map(folded, fn [x, y] -> %{x: x, y: -y} end))
-|> Vl.mark(:square, opacity: 0.4, size: 900)
-|> Vl.encode_field(:x, "x", type: :quantitative, axis: false)
-|> Vl.encode_field(:y, "y", type: :quantitative, axis: false)
-|> Vl.encode_field(:color, "x",
-  type: :quantitative,
-  scale: [range: ["#27e3c8", "#b25ae7"]],
-  legend: false
-)
-|> Vl.config(view: [stroke: :transparent])
+vl_print = fn points ->
+  {[cols, _], [_, rows]} =
+    {Enum.max_by(points, fn [x, _] -> x end), Enum.max_by(points, fn [_, y] -> y end)}
+
+  Vl.new(width: 800, height: 150)
+  |> Vl.data_from_values(Enum.map(points, fn [x, y] -> %{x: x, y: -y} end))
+  |> Vl.mark(:square, opacity: 0.4, size: 900)
+  |> Vl.encode_field(:x, "x", type: :quantitative, axis: false)
+  |> Vl.encode_field(:y, "y", type: :quantitative, axis: false)
+  |> Vl.encode_field(:color, "x",
+    type: :quantitative,
+    scale: [range: ["#27e3c8", "#b25ae7"]],
+    legend: false
+  )
+  |> Vl.config(view: [stroke: :transparent])
+end
+
+vl_print.(folded)
+```
+
+```elixir
+Kino.animate(100, {dots, folds}, fn
+  :done ->
+    :halt
+
+  {points, []} ->
+    vl = vl_print.(points)
+    {:cont, vl, :done}
+
+  {points, [[axis, location] | rest]} ->
+    vl = vl_print.(points)
+    points = Folds.fold_once(points, axis, location)
+    {:cont, vl, {points, rest}}
+end)
 ```
