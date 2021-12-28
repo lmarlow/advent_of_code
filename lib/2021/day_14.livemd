@@ -2,7 +2,8 @@
 
 # Advent of Code 2021-14
 
-##  --- Day 14: Extended Polymerization ---
+## --- Day 14: Extended Polymerization ---
+
 Problem Link: https://adventofcode.com/2021/day/14
 
 ## Setup
@@ -26,10 +27,57 @@ input = Kino.Input.textarea("Please paste your input file:")
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-lines =
+[template | rules] =
   input
   |> Kino.Input.read()
   |> String.split("\n", trim: true)
+
+template = String.to_charlist(template)
+
+rules =
+  rules
+  |> Enum.flat_map(fn line ->
+    [[a, b], [insertion]] =
+      line
+      |> String.split(" -> ")
+      |> Enum.map(&String.to_charlist/1)
+
+    [{[a, b], insertion}]
+  end)
+  |> Map.new()
+```
+
+```elixir
+defmodule Polymer do
+  def step(chain, rules), do: step(chain, rules, [])
+
+  def step([], _rules, acc), do: Enum.reverse(acc)
+
+  def step([last], rules, acc), do: step([], rules, [last | acc])
+
+  def step([first, second | rest], rules, acc) do
+    step([second | rest], rules, [rules[[first, second]], first | acc])
+  end
+
+  def steps(chain, rules, steps) do
+    for n <- 1..steps, reduce: chain do
+      template ->
+        template
+        |> step(rules)
+        |> tap(&IO.inspect(length(&1), label: n))
+    end
+  end
+
+  def strength(chain) do
+    {min, max} =
+      chain
+      |> Enum.frequencies()
+      |> Map.values()
+      |> Enum.min_max()
+
+    max - min
+  end
+end
 ```
 
 ## Part 1
@@ -37,7 +85,9 @@ lines =
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-
+template
+|> Polymer.steps(rules, 10)
+|> Polymer.strength()
 ```
 
 ## Part 2
@@ -45,5 +95,56 @@ lines =
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+defmodule Counter do
+  @type rules() :: %{charlist() => char()}
+  @type pair_counts() :: %{charlist() => non_neg_integer()}
+  @type char_counts() :: %{char() => non_neg_integer()}
+  @type chain_counts() :: {pair_counts(), char_counts()}
 
+  def chain_counts(chain) do
+    {Enum.frequencies(Enum.chunk_every(chain, 2, 1, :discard)), Enum.frequencies(chain)}
+  end
+
+  @spec step(charlist(), rules()) :: {pair_counts(), char_counts()}
+  def step(chain, rules) when is_list(chain) and is_map(rules) do
+    step(rules, chain_counts(chain))
+  end
+
+  @spec step(rules(), chain_counts()) :: {pair_counts(), char_counts()}
+  def step(rules, {pair_counts, char_counts}) do
+    for {[a, b] = pair, count} <- pair_counts, reduce: {%{}, char_counts} do
+      {pair_counts, char_counts} ->
+        new_char = rules[pair]
+
+        {pair_counts |> inc([a, new_char], count) |> inc([new_char, b], count),
+         char_counts |> inc(new_char, count)}
+    end
+  end
+
+  defp inc(freq_map, key, count) do
+    Map.update(freq_map, key, count, &(&1 + count))
+  end
+
+  def steps(chain, rules, steps) do
+    for _n <- 1..steps, reduce: chain_counts(chain) do
+      counts ->
+        step(rules, counts)
+    end
+  end
+
+  def strength({_pair_counts, char_counts}) do
+    {min, max} =
+      char_counts
+      |> Map.values()
+      |> Enum.min_max()
+
+    max - min
+  end
+end
+```
+
+```elixir
+template
+|> Counter.steps(rules, 40)
+|> Counter.strength()
 ```
