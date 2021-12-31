@@ -2,7 +2,8 @@
 
 # Advent of Code 2021-15
 
-##  --- Day 15: Chiton ---
+## --- Day 15: Chiton ---
+
 Problem Link: https://adventofcode.com/2021/day/15
 
 ## Setup
@@ -30,6 +31,82 @@ lines =
   input
   |> Kino.Input.read()
   |> String.split("\n", trim: true)
+  |> Enum.map(&String.to_charlist/1)
+```
+
+```elixir
+defmodule Pathing do
+  @infinity 1_000_000
+
+  def path(start, finish, grid) do
+    distances =
+      grid
+      |> Map.keys()
+      |> Map.new(fn n -> {n, @infinity} end)
+      |> Map.put(start, 0)
+
+    path(start, finish, grid, distances, MapSet.new([start]))
+  end
+
+  def path(finish, finish, grid, distances, visited) do
+    neighbors = neighbors(finish, grid, visited)
+
+    if Enum.all?(neighbors, fn n -> distances[n] < @infinity end) do
+      distances[finish]
+    else
+      smallest_remaining = smallest_remaining(neighbors, grid, distances, visited)
+
+      path(smallest_remaining, finish, grid, distances, visited)
+    end
+  end
+
+  def path(node, finish, grid, distances, visited) do
+    current_distance = distances[node]
+    neighbors = neighbors(node, grid, visited)
+
+    distances =
+      for n <- neighbors, reduce: distances do
+        dists ->
+          new_dist = current_distance + grid[n]
+
+          Map.update!(dists, n, fn old_dist ->
+            if old_dist < new_dist, do: old_dist, else: new_dist
+          end)
+      end
+
+    visited = MapSet.put(visited, node)
+
+    smallest_remaining = smallest_remaining(neighbors, grid, distances, visited)
+
+    path(smallest_remaining, finish, grid, distances, visited)
+  end
+
+  defp smallest_remaining([], grid, distances, visited) do
+    remaining = Map.keys(grid) -- MapSet.to_list(visited)
+
+    smallest(remaining, distances)
+  end
+
+  defp smallest_remaining(neighbors, _grid, distances, _visited) do
+    smallest(neighbors, distances)
+  end
+
+  defp smallest(nodes, distances) do
+    distances
+    |> Map.take(nodes)
+    |> Enum.min_by(fn {_, distance} -> distance end)
+    |> elem(0)
+  end
+
+  def neighbors({y, x}, grid, visited) do
+    for {dy, dx} <- [{-1, 0}, {0, -1}, {1, 0}, {0, 1}],
+        neighbor = {y + dy, x + dx},
+        Map.has_key?(grid, neighbor),
+        neighbor not in visited do
+      neighbor
+    end
+  end
+end
 ```
 
 ## Part 1
@@ -37,7 +114,15 @@ lines =
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+grid =
+  for {row, row_num} <- Enum.with_index(lines), reduce: %{} do
+    grid ->
+      for {char, col_num} <- Enum.with_index(row), val = char - ?0, reduce: grid do
+        grid -> Map.put(grid, {row_num, col_num}, val)
+      end
+  end
 
+Pathing.path({0, 0}, {length(lines) - 1, length(hd(lines)) - 1}, grid)
 ```
 
 ## Part 2
