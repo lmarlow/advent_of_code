@@ -28,15 +28,9 @@ defmodule AdventOfCode.Y2021.Day15 do
   def run(data, part), do: data |> solve(part)
 
   def parse(data) do
-    lines =
-      data
-      |> String.split("\n", trim: true)
-
-    for {line, row_num} <- Enum.with_index(lines),
-        {char_val, col_num} <- Enum.with_index(String.to_charlist(line)),
-        into: %{} do
-      {{row_num, col_num}, char_val - ?0}
-    end
+    data
+    |> String.split("\n", trim: true)
+    |> Enum.map(&Enum.map(String.to_charlist(&1), fn c -> c - ?0 end))
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -46,53 +40,79 @@ defmodule AdventOfCode.Y2021.Day15 do
 
   @doc """
   """
-  def solve_1(grid) do
-    rows =
-      grid
-      |> Enum.map(fn {{row, _}, _} -> row end)
-      |> Enum.max()
+  def solve_1(data) do
+    grid = to_grid(data)
 
-    cols =
-      grid
-      |> Enum.map(fn {{_, col}, _} -> col end)
-      |> Enum.max()
-
-    path({0, 0}, {rows, cols}, grid)
+    path({0, 0}, Enum.max(Map.keys(grid)), grid)
   end
 
   @doc """
   """
-  def solve_2(_data) do
-    {2, :not_implemented}
+  def solve_2(data) do
+    grid =
+      data
+      |> to_grid()
+      |> expand_data(5)
+
+    path({0, 0}, Enum.max(Map.keys(grid)), grid)
   end
 
   def path(start, target, grid) do
     distances = %{start => 0}
-    queue = MapSet.new(Map.keys(grid))
+    queue = Enum.reduce(Map.keys(grid), [], &pq(&2, Map.get(distances, &1, :infinity), &1))
     path(grid, target, distances, queue)
   end
 
   def path(grid, target, distances, queue) do
-    {row, col} = u = Enum.min_by(queue, &distances[&1])
+    [{_shortest_dist, {row, col} = u} | queue] = queue
 
     if u == target do
       distances[u]
     else
-      queue = MapSet.delete(queue, u)
-
-      distances =
+      {distances, queue} =
         for v <- [{row - 1, col}, {row + 1, col}, {row, col - 1}, {row, col + 1}],
-            v in queue,
+            Map.has_key?(grid, v),
             alt = grid[v] + distances[u],
             alt < Map.get(distances, v, :infinity),
-            reduce: distances do
-          distances ->
-            Map.put(distances, v, alt)
+            reduce: {distances, queue} do
+          {distances, queue} ->
+            {Map.put(distances, v, alt), pq(queue, alt, v)}
         end
 
       path(grid, target, distances, queue)
     end
   end
 
+  defp pq([{w1, _} | _] = q, w0, v) when w0 <= w1, do: [{w0, v} | q]
+
+  defp pq([head | tail], w, v), do: [head | pq(tail, w, v)]
+
+  defp pq([], w, v), do: [{w, v}]
+
+  def to_grid(rows) do
+    for {row, row_num} <- Enum.with_index(rows),
+        {val, col_num} <- Enum.with_index(row),
+        into: %{} do
+      {{row_num, col_num}, val}
+    end
+  end
+
   # --- </Solution Functions> ---
+
+  def expand_data(grid, n) do
+    {max_row, max_col} = Enum.max(Map.keys(grid))
+    new_max_row = (max_row + 1) * n - 1
+    new_max_col = (max_col + 1) * n - 1
+
+    for row <- 0..new_max_row, col <- 0..new_max_col, new_pos = {row, col}, into: %{} do
+      inc = div(row, max_row + 1) + div(col, max_col + 1)
+      pos = {rem(row, max_row + 1), rem(col, max_col + 1)}
+      old_val = Map.fetch!(grid, pos)
+
+      case old_val + inc do
+        new_val when new_val < 10 -> {new_pos, new_val}
+        new_val -> {new_pos, rem(new_val, 10) + 1}
+      end
+    end
+  end
 end

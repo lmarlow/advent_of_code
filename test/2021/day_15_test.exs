@@ -45,7 +45,32 @@ defmodule AdventOfCode.Y2021.Day15Test do
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 2925
+    end
+  end
+
+  describe "expand_grid/2" do
+    test "tiny" do
+      data = """
+      1
+      """
+
+      mini_grid = data |> Solution.parse() |> Solution.to_grid()
+      assert %{{0, 0} => 1} = mini_grid
+      expanded = Solution.expand_data(mini_grid, 2)
+      assert %{{0, 0} => 1, {0, 1} => 2, {1, 0} => 2, {1, 1} => 3} = expanded
+    end
+
+    test "small" do
+      data = """
+      12
+      38
+      """
+
+      mini_grid = data |> Solution.parse() |> Solution.to_grid()
+      assert %{{1, 0} => 3} = mini_grid
+      expanded = Solution.expand_data(mini_grid, 3)
+      assert %{{1, 0} => 3, {0, 4} => 3, {0, 5} => 4, {3, 1} => 9, {3, 3} => 1} = expanded
     end
   end
 end
