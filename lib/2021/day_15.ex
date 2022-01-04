@@ -59,7 +59,7 @@ defmodule AdventOfCode.Y2021.Day15 do
 
   def path(start, target, grid) do
     distances = %{start => 0}
-    queue = Enum.reduce(Map.keys(grid), [], &pq(&2, Map.get(distances, &1, :infinity), &1))
+    queue = pq([], 0, start)
     path(grid, target, distances, queue)
   end
 
