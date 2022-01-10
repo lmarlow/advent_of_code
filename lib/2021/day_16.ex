@@ -5,7 +5,12 @@ defmodule AdventOfCode.Y2021.Day16 do
   """
   use AdventOfCode.Helpers.InputReader, year: 2021, day: 16
 
-  defstruct version: 0, type_id: 0, length_type_id: 0, length: 0, value: nil, leftover: <<>>
+  defstruct version: 0,
+            type_id: 0,
+            length_type_id: 0,
+            length: 0,
+            value: nil,
+            sub_packets: []
 
   @doc ~S"""
   Sample data:
@@ -40,9 +45,16 @@ defmodule AdventOfCode.Y2021.Day16 do
 
   def sum_versions(%{version: version, type_id: 4}, acc), do: acc + version
 
-  def sum_versions(%{version: version, value: sub_packets}, acc) do
+  def sum_versions(%{version: version, sub_packets: sub_packets}, acc) do
     sub_packets
     |> Enum.reduce(acc + version, fn packet, acc -> sum_versions(packet, acc) end)
+  end
+
+  def count_packets(%{type_id: 4}, acc), do: acc + 1
+
+  def count_packets(%{sub_packets: sub_packets}, acc) do
+    sub_packets
+    |> Enum.reduce(acc + 1, fn packet, acc -> count_packets(packet, acc) end)
   end
 
   @doc """
@@ -52,97 +64,81 @@ defmodule AdventOfCode.Y2021.Day16 do
   end
 
   def decode(bin) when is_bitstring(bin) do
-    decode(bin, struct(__MODULE__))
+    {_rest, packet} = decode_packet(bin)
+    packet
   end
 
-  def decode(<<version::3, 4::3, rest::bits>>, packet) do
-    decode_literal(rest, <<>>, 0, %{packet | version: version, type_id: 4})
+  def decode_packet(<<version::3, rest::bits>>) do
+    decode_type(rest, struct(__MODULE__, version: version))
   end
 
-  def decode(
-        <<version::3, type_id::3, 0::1, bit_count::15, sub_packet_data::bits-size(bit_count),
-          rest::bits>>,
+  def decode_type(<<4::3, rest::bits>>, packet) do
+    decode_literal(rest, 0, %{packet | type_id: 4})
+  end
+
+  def decode_type(<<type_id::3, rest::bits>>, packet) do
+    decode_operator(rest, %{packet | type_id: type_id})
+  end
+
+  def decode_operator(
+        <<0::1, bit_count::15, sub_packet_data::bits-size(bit_count), rest::bits>>,
         packet
       ) do
-    %{
-      packet
-      | version: version,
-        type_id: type_id,
-        length_type_id: 0,
-        length: bit_count,
-        value: decode_packets(sub_packet_data, []),
-        leftover: rest
-    }
+    {rest,
+     %{
+       packet
+       | length_type_id: 0,
+         length: bit_count,
+         sub_packets: decode_operator_len(sub_packet_data, [])
+     }}
   end
 
-  def decode(
-        <<version::3, type_id::3, 1::1, packet_count::11, rest::bits>>,
+  def decode_operator(
+        <<1::1, packet_count::11, rest::bits>>,
         packet
       ) do
-    %{
+    {leftover, sub_packets} = decode_packet_count(packet_count, rest, [])
+
+    packet = %{
       packet
-      | version: version,
-        type_id: type_id,
-        length_type_id: 1,
+      | length_type_id: 1,
         length: packet_count,
-        value: decode_n_packets(rest, packet_count, [])
+        sub_packets: sub_packets
     }
+
+    {leftover, packet}
   end
 
-  def decode(rest, packet), do: %{packet | leftover: rest}
+  def decode_operator_len(<<>>, packets), do: Enum.reverse(packets)
 
-  def decode_packets(data, packets) do
-    case decode(data) do
-      %{leftover: <<>>} = packet ->
-        Enum.reverse([packet | packets])
-
-      %{leftover: rest} = packet ->
-        decode_packets(rest, [packet | packets])
-    end
+  def decode_operator_len(data, packets) do
+    {rest, packet} = decode_packet(data)
+    decode_operator_len(rest, [packet | packets])
   end
 
-  def decode_n_packets(_data, 0, packets),
-    do: Enum.reverse(packets)
+  def decode_packet_count(0, leftover, packets), do: {leftover, Enum.reverse(packets)}
 
-  def decode_n_packets(data, packet_count, packets) do
-    %{leftover: rest} = packet = decode(data)
-    decode_n_packets(rest, packet_count - 1, [packet | packets])
+  def decode_packet_count(packet_count, data, packets) do
+    {rest, packet} = decode_packet(data)
+    decode_packet_count(packet_count - 1, rest, [packet | packets])
+  end
+
+  import Bitwise
+
+  def decode_literal(
+        <<0::1, value::4, rest::bits>>,
+        acc,
+        packet
+      ) do
+    {rest, %{packet | value: (acc <<< 4) + value}}
   end
 
   def decode_literal(
-        <<0::1, last_word::bits-size(4), rest::bits>>,
-        literal_bits,
-        bit_count,
+        <<_::1, value::4, rest::bits>>,
+        acc,
         packet
       ) do
-    %{
-      packet
-      | leftover: rest,
-        value:
-          literal_value(
-            <<literal_bits::bits-size(bit_count), last_word::bits-size(4)>>,
-            bit_count + 4
-          )
-    }
-  end
-
-  def decode_literal(
-        <<1::1, word::bits-size(4), rest::bits>>,
-        literal_bits,
-        bit_count,
-        packet
-      ) do
-    decode_literal(
-      rest,
-      <<literal_bits::bits-size(bit_count), word::bits-size(4)>>,
-      bit_count + 4,
-      packet
-    )
-  end
-
-  defp literal_value(literal_bits, bit_count) do
-    <<value::size(bit_count)>> = literal_bits
-    value
+    decode_literal(rest, (acc <<< 4) + value, packet)
   end
 
   def encode2(bits) when is_bitstring(bits),

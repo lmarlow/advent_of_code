@@ -22,10 +22,10 @@ defmodule AdventOfCode.Y2021.Day16Test do
       # 00111000000000000110111101000101001010010001001000000000
       packet = "38006F45291200" |> Solution.parse()
 
-      assert %Solution{version: 1, type_id: 6, length_type_id: 0, value: value} =
+      assert %Solution{version: 1, type_id: 6, length_type_id: 0, sub_packets: sub_packets} =
                Solution.decode(packet)
 
-      assert [%Solution{type_id: 4, value: 10}, %Solution{type_id: 4, value: 20}] = value
+      assert [%Solution{type_id: 4, value: 10}, %Solution{type_id: 4, value: 20}] = sub_packets
     end
 
     test "type length id 1" do
@@ -33,22 +33,20 @@ defmodule AdventOfCode.Y2021.Day16Test do
 
       packet = "EE00D40C823060" |> Solution.parse()
 
-      assert %Solution{version: 7, type_id: 3, length_type_id: 1, value: value} =
+      assert %Solution{version: 7, type_id: 3, length_type_id: 1, sub_packets: sub_packets} =
                Solution.decode(packet)
 
       assert [
                %Solution{type_id: 4, value: 1},
                %Solution{type_id: 4, value: 2},
                %Solution{type_id: 4, value: 3}
-             ] = value
+             ] = sub_packets
     end
 
     test "literals" do
-      # 110100101111111000101000
-      packet = "D2FE28" |> Solution.parse()
-
-      assert %Solution{version: 6, type_id: 4, value: 2021, leftover: <<0::3>>} =
-               Solution.decode(packet)
+      # # 110100101111111000101000
+      # packet = "D2FE28" |> Solution.parse()
+      # assert %Solution{version: 6, type_id: 4, value: 2021} = Solution.decode(packet)
 
       packet = "11010001010" |> decode2()
       assert %Solution{type_id: 4, value: 10} = Solution.decode(packet)
@@ -72,7 +70,7 @@ defmodule AdventOfCode.Y2021.Day16Test do
     end
 
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(1) == 871
     end
   end
 
