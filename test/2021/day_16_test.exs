@@ -6,9 +6,6 @@ defmodule AdventOfCode.Y2021.Day16Test do
 
   alias AdventOfCode.Y2021.Day16, as: Solution
 
-  @sample_data ~S"""
-  """
-
   describe "decoding" do
     test "b2tob16" do
       assert "38006F45291200" ==
@@ -75,8 +72,40 @@ defmodule AdventOfCode.Y2021.Day16Test do
   end
 
   describe "part 2" do
+    test "C200B40A82 finds the sum of 1 and 2, resulting in the value 3" do
+      assert 3 == Solution.run("C200B40A82", 2)
+    end
+
+    test "04005AC33890 finds the product of 6 and 9, resulting in the value 54" do
+      assert 54 == Solution.run("04005AC33890", 2)
+    end
+
+    test "880086C3E88112 finds the minimum of 7, 8, and 9, resulting in the value 7" do
+      assert 7 == Solution.run("880086C3E88112", 2)
+    end
+
+    test "CE00C43D881120 finds the maximum of 7, 8, and 9, resulting in the value 9" do
+      assert 9 == Solution.run("CE00C43D881120", 2)
+    end
+
+    test "D8005AC2A8F0 produces 1, because 5 is less than 15" do
+      assert 1 == Solution.run("D8005AC2A8F0", 2)
+    end
+
+    test "F600BC2D8F produces 0, because 5 is not greater than 15" do
+      assert 0 == Solution.run("F600BC2D8F", 2)
+    end
+
+    test "9C005AC2F8F0 produces 0, because 5 is not equal to 15" do
+      assert 0 == Solution.run("9C005AC2F8F0", 2)
+    end
+
+    test "9C0141080250320F1802104A08 produces 1, because 1 + 3 = 2 * 2" do
+      assert 1 == Solution.run("9C0141080250320F1802104A08", 2)
+    end
+
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 68_703_010_504
     end
   end
 

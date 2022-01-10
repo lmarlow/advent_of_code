@@ -43,6 +43,14 @@ defmodule AdventOfCode.Y2021.Day16 do
     |> sum_versions(0)
   end
 
+  @doc """
+  """
+  def solve_2(data) do
+    data
+    |> decode()
+    |> evaluate()
+  end
+
   def sum_versions(%{version: version, type_id: 4}, acc), do: acc + version
 
   def sum_versions(%{version: version, sub_packets: sub_packets}, acc) do
@@ -57,11 +65,40 @@ defmodule AdventOfCode.Y2021.Day16 do
     |> Enum.reduce(acc + 1, fn packet, acc -> count_packets(packet, acc) end)
   end
 
-  @doc """
-  """
-  def solve_2(data) do
-    {2, :not_implemented}
+  def evaluate(%{type_id: 0, sub_packets: sub_packets}) do
+    sub_packets
+    |> Enum.map(&evaluate/1)
+    |> Enum.sum()
   end
+
+  def evaluate(%{type_id: 1, sub_packets: sub_packets}),
+    do:
+      sub_packets
+      |> Enum.map(&evaluate/1)
+      |> Enum.product()
+
+  def evaluate(%{type_id: 2, sub_packets: sub_packets}),
+    do:
+      sub_packets
+      |> Enum.map(&evaluate/1)
+      |> Enum.min()
+
+  def evaluate(%{type_id: 3, sub_packets: sub_packets}),
+    do:
+      sub_packets
+      |> Enum.map(&evaluate/1)
+      |> Enum.max()
+
+  def evaluate(%{type_id: 4, value: value}), do: value
+
+  def evaluate(%{type_id: 5, sub_packets: [a, b]}),
+    do: if(evaluate(a) > evaluate(b), do: 1, else: 0)
+
+  def evaluate(%{type_id: 6, sub_packets: [a, b]}),
+    do: if(evaluate(a) < evaluate(b), do: 1, else: 0)
+
+  def evaluate(%{type_id: 7, sub_packets: [a, b]}),
+    do: if(evaluate(a) == evaluate(b), do: 1, else: 0)
 
   def decode(bin) when is_bitstring(bin) do
     {_rest, packet} = decode_packet(bin)

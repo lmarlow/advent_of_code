@@ -19,7 +19,7 @@
 | 13  |   [Transparent Origami](https://adventofcode.com/2021/day/13)   |    :star2: | [day_13.ex](/lib/2021/day_13.ex) | [day_13_test.exs](/test/2021/day_13_test.exs) |
 | 14  | [Extended Polymerization](https://adventofcode.com/2021/day/14) |    :star2: | [day_14.ex](/lib/2021/day_14.ex) | [day_14_test.exs](/test/2021/day_14_test.exs) |
 | 15  |         [Chiton](https://adventofcode.com/2021/day/15)          |    :star2: | [day_15.ex](/lib/2021/day_15.ex) | [day_15_test.exs](/test/2021/day_15_test.exs) |
-| 16  |         [Day 16](https://adventofcode.com/2021/day/16)          |            | [day_16.ex](/lib/2021/day_16.ex) | [day_16_test.exs](/test/2021/day_16_test.exs) |
+| 16        [Packet Decoder](https://adventofcode.com/2021/day/16)      |    :star2: | [day_16.ex](/lib/2021/day_16.ex) | [day_16_test.exs](/test/2021/day_16_test.exs) |
 | 17  |         [Day 17](https://adventofcode.com/2021/day/17)          |            | [day_17.ex](/lib/2021/day_17.ex) | [day_17_test.exs](/test/2021/day_17_test.exs) |
 | 18  |         [Day 18](https://adventofcode.com/2021/day/18)          |            | [day_18.ex](/lib/2021/day_18.ex) | [day_18_test.exs](/test/2021/day_18_test.exs) |
 | 19  |         [Day 19](https://adventofcode.com/2021/day/19)          |            | [day_19.ex](/lib/2021/day_19.ex) | [day_19_test.exs](/test/2021/day_19_test.exs) |
