@@ -37,7 +37,22 @@ defmodule AdventOfCode.Y2021.Day17 do
     s = (1 + n)n/2 = (1/2) * n^2 + (1/2) * n
     0 = n^2 + n - 2*s
   """
-  def solve_1({xr, yr}) do
+  def solve_1({_xr, _yr} = target) do
+    target
+    |> valid_paths()
+    |> Enum.map(&max_height/1)
+    |> Enum.max()
+  end
+
+  @doc """
+  """
+  def solve_2({_xr, _yr} = target) do
+    target
+    |> valid_paths()
+    |> Enum.count()
+  end
+
+  def valid_paths({xr, yr}) do
     vx_max = xr.last
     vx_min = quadratic(1, 1, -2 * xr.first)
     vxr = vx_min..vx_max
@@ -50,14 +65,6 @@ defmodule AdventOfCode.Y2021.Day17 do
     all_vs
     |> Enum.map(&path(xr, yr, &1))
     |> Enum.filter(&hits_target(xr, yr, &1))
-    |> Enum.map(&max_height/1)
-    |> Enum.max()
-  end
-
-  @doc """
-  """
-  def solve_2(data) do
-    {2, :not_implemented}
   end
 
   defp quadratic(a, b, c) do
