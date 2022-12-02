@@ -23,7 +23,7 @@ defmodule Mix.Tasks.Solve do
   def run(args) do
     case InputParser.parse(args) do
       {year, day} ->
-        {to_string(year), to_string(day)}
+        {year, day}
         |> Generator.run()
         |> Mix.shell().info()
 

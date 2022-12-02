@@ -129,6 +129,13 @@ defmodule AdventOfCode.Helpers.Generator do
     end
     |> Floki.raw_html()
     |> Pandex.html_to_gfm()
+    |> then(fn
+      {:ok, markdown} ->
+        markdown
+
+      _ ->
+        ""
+    end)
   end
 
   defp zero_padded(day), do: day |> to_string() |> String.pad_leading(2, "0")

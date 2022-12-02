@@ -1,6 +1,6 @@
 <!-- vim: syntax=markdown -->
 
-# Advent of Code <%= year %>-<%= String.pad_leading(day, 2, "0") %>
+# Advent of Code <%= year %>-<%= String.pad_leading(to_string(day), 2, "0") %>
 
 ```elixir
 Mix.install([
@@ -14,6 +14,9 @@ Mix.install([
 ##  <%= title %>
 
 Problem Link: https://adventofcode.com/<%= year %>/day/<%= day %>
+
+<%= if day > 1 do %>[Previous Day](day_<%= String.pad_leading(to_string(day - 1), 2, "0") %>).livemd<% end %>
+<%= if day < 24 do %>[Next Day](day_<%= String.pad_leading(to_string(day + 1), 2, "0") %>.livemd)<% end %>
 
 ## Input Data
 

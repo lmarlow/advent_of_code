@@ -1,10 +1,10 @@
-defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(day, 2, "0") %>Test do
+defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(to_string(day), 2, "0") %>Test do
   @moduledoc false
 
   use ExUnit.Case
-  @moduletag :y<%= year |> String.split_at(2) |> elem(1) %><%= String.pad_leading(day, 2, "0") %>
+  @moduletag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>
 
-  alias AdventOfCode.Y<%= year  %>.Day<%= String.pad_leading(day, 2, "0") %>, as: Solution
+  alias AdventOfCode.Y<%= year  %>.Day<%= String.pad_leading(to_string(day), 2, "0") %>, as: Solution
 
   @sample_data ~S"""
   """
