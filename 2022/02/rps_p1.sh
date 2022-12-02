@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+# A Rock
+# B Paper
+# C Scissors
+
+# X Rock 1 point
+# Y Paper 2 points
+# Z Scissors 3 points
+
+# lose 0 points
+# draw 3 points
+# win 6 points
+
 while getopts "h" option
 do
   case $option in

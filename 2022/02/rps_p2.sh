@@ -4,6 +4,10 @@
 # B Paper 2 points
 # C Scissors 3 points
 
+# X lose 0 points
+# Y draw 3 points
+# Z win 6 points
+
 while getopts "h" option
 do
   case $option in
