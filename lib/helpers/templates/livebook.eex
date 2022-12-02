@@ -2,22 +2,20 @@
 
 # Advent of Code <%= year %>-<%= String.pad_leading(day, 2, "0") %>
 
-##  <%= title %>
-Problem Link: https://adventofcode.com/<%= year %>/day/<%= day %>
-
-## Setup
-
 ```elixir
 Mix.install([
-  {:kino, "~> 0.4.1"},
-  {:vega_lite, "~> 0.1.2"},
+  {:kino, "~> 0.7.0"},
+  {:vega_lite, "~> 0.1.4"},
+  {:kino_vega_lite, "~> 0.1.1"},
   {:nx, github: "elixir-nx/nx", sparse: "nx"}
 ])
 ```
 
-```elixir
-alias VegaLite, as: Vl
-```
+##  <%= title %>
+
+Problem Link: https://adventofcode.com/<%= year %>/day/<%= day %>
+
+## Input Data
 
 ```elixir
 input = Kino.Input.textarea("Please paste your input file:")

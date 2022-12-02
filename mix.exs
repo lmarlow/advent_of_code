@@ -4,7 +4,7 @@ defmodule AdventOfCode.MixProject do
   def project do
     [
       app: :advent_of_code,
-      version: "0.20.21",
+      version: "0.20.22",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -24,7 +24,7 @@ defmodule AdventOfCode.MixProject do
       {:nx, github: "elixir-nx/nx", sparse: "nx"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:httpoison, "~> 1.8.0"},
-      {:floki, "~> 0.32.0"},
+      {:floki, "~> 0.34.0"},
       {:jason, "~> 1.2"}
     ]
   end
