@@ -38,10 +38,14 @@ defmodule AdventOfCode.Helpers.Generator do
 
     Mix.Generator.copy_file(input_file_path, build_priv_file_path)
 
+    day_doc = get_day_doc(year, day)
+    title = get_title(day_doc)
+    problem_text = get_problem_text(day_doc)
+
     # Write code files at `lib/<year>/day_<day>.ex`
     code_content =
       @code_template
-      |> EEx.eval_file(day: day, year: year, title: get_title(year, day))
+      |> EEx.eval_file(day: day, year: year, title: title, problem_text: problem_text)
 
     code_file =
       code_dir
@@ -61,7 +65,7 @@ defmodule AdventOfCode.Helpers.Generator do
     # Write code files at `lib/<year>/day_<day>.ex`
     livebook_content =
       @livebook_template
-      |> EEx.eval_file(day: day, year: year, title: get_title(year, day))
+      |> EEx.eval_file(day: day, year: year, title: title, problem_text: problem_text)
 
     livebook_file =
       code_dir
@@ -94,7 +98,7 @@ defmodule AdventOfCode.Helpers.Generator do
     end
   end
 
-  defp get_title(year, day) do
+  def get_day_doc(year, day) do
     HTTPoison.start()
 
     "https://adventofcode.com/#{year}/day/#{day}"
@@ -106,12 +110,25 @@ defmodule AdventOfCode.Helpers.Generator do
       end
     end)
     |> Floki.parse_document!()
+  end
+
+  defp get_title(doc) do
+    doc
     |> Floki.find("h2")
     |> then(fn [{"h2", [], [title | _]}] ->
       title |> String.trim("-") |> String.trim()
     end)
   rescue
     _ -> ""
+  end
+
+  defp get_problem_text(doc) do
+    case Floki.find(doc, "article") do
+      [{"article", _, [{"h2", _, _} | problem_doc]}] -> problem_doc
+      other -> other
+    end
+    |> Floki.raw_html()
+    |> Pandex.html_to_gfm()
   end
 
   defp zero_padded(day), do: day |> to_string() |> String.pad_leading(2, "0")

@@ -32,6 +32,8 @@ lines =
 
 ## Part 1
 
+<%= problem_text %>
+
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir

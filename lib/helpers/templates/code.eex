@@ -1,6 +1,7 @@
 defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(day, 2, "0") %> do
   @moduledoc """
-  <%= title %>
+  # <%= title %>
+
   Problem Link: https://adventofcode.com/<%= year %>/day/<%= day %>
   """
   use AdventOfCode.Helpers.InputReader, year: <%= year %>, day: <%= day %>
@@ -28,12 +29,16 @@ defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(day, 2, "0") %> do
   # --- <Solution Functions> ---
 
   @doc """
+  # Part 1
+
+  <%= problem_text %>
   """
   def solve_1(data) do
     {1, :not_implemented}
   end
 
   @doc """
+  # Part 2
   """
   def solve_2(data) do
     {2, :not_implemented}
