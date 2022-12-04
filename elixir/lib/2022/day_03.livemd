@@ -105,14 +105,19 @@ priority_value = fn
   c -> c - ?a + 1
 end
 
-for line <- lines,
-    {comp1, comp2} = Enum.split(line, div(length(line), 2)),
-    dupe = Enum.find(comp1, &(&1 in comp2)),
-    val = priority_value.(dupe),
-    reduce: 0 do
-  score ->
-    score + val
+priority_sums = fn chunks ->
+  for [comp1 | rest] <- chunks,
+      dupe = Enum.find(comp1, fn c -> Enum.all?(rest, &(c in &1)) end),
+      val = priority_value.(dupe),
+      reduce: 0 do
+    score ->
+      score + val
+  end
 end
+
+lines
+|> Enum.map(&(&1 |> Enum.split(div(length(&1), 2)) |> Tuple.to_list()))
+|> priority_sums.()
 ```
 
 ## Part 2
@@ -168,11 +173,7 @@ group. *What is the sum of the priorities of those item types?*
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-for [comp1 | rest] <- Enum.chunk_every(lines, 3),
-    dupe = Enum.find(comp1, fn c -> Enum.all?(rest, &(c in &1)) end),
-    val = priority_value.(dupe),
-    reduce: 0 do
-  score ->
-    score + val
-end
+lines
+|> Enum.chunk_every(3)
+|> priority_sums.()
 ```
