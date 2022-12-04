@@ -100,24 +100,24 @@ Find the item type that appears in both compartments of each rucksack.
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
-priority_value = fn
-  c when c in ?A..?Z -> c - ?A + 27
-  c -> c - ?a + 1
-end
+defmodule RucksackPriority do
+  def value(c) when c in ?A..?Z, do: c - ?A + 27
+  def value(c), do: c - ?a + 1
 
-priority_sums = fn chunks ->
-  for [comp1 | rest] <- chunks,
-      dupe = Enum.find(comp1, fn c -> Enum.all?(rest, &(c in &1)) end),
-      val = priority_value.(dupe),
-      reduce: 0 do
-    score ->
-      score + val
+  def priority_sums(chunks) do
+    for [comp1 | rest] <- chunks,
+        dupe = Enum.find(comp1, fn c -> Enum.all?(rest, &(c in &1)) end),
+        val = value(dupe),
+        reduce: 0 do
+      score ->
+        score + val
+    end
   end
 end
 
 lines
 |> Enum.map(&(&1 |> Enum.split(div(length(&1), 2)) |> Tuple.to_list()))
-|> priority_sums.()
+|> RucksackPriority.priority_sums()
 ```
 
 ## Part 2
@@ -175,5 +175,5 @@ group. *What is the sum of the priorities of those item types?*
 ```elixir
 lines
 |> Enum.chunk_every(3)
-|> priority_sums.()
+|> RucksackPriority.priority_sums()
 ```
