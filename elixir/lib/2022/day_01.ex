@@ -9,6 +9,20 @@ defmodule AdventOfCode.Y2022.Day01 do
   Sample data:
 
   ```
+  1000
+  2000
+  3000
+
+  4000
+
+  5000
+  6000
+
+  7000
+  8000
+  9000
+
+  10000
   ```
   """
   def run(data \\ input!(), part)
@@ -19,7 +33,7 @@ defmodule AdventOfCode.Y2022.Day01 do
 
   def parse(data) do
     data
-    |> String.split("\n", trim: true)
+    |> String.split("\n")
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -30,13 +44,27 @@ defmodule AdventOfCode.Y2022.Day01 do
   @doc """
   """
   def solve_1(data) do
-    {1, :not_implemented}
+    data
+    |> elf_calories()
+    |> Enum.max()
   end
 
   @doc """
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    data
+    |> elf_calories()
+    |> Enum.sort(:desc)
+    |> Enum.take(3)
+    |> Enum.sum()
+  end
+
+  defp elf_calories(data) do
+    data
+    |> Enum.reduce([0], fn
+      "", snacks -> [0 | snacks]
+      n, [snack | snacks] -> [snack + String.to_integer(n) | snacks]
+    end)
   end
 
   # --- </Solution Functions> ---
