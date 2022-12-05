@@ -15,7 +15,7 @@ Mix.install([
 
 Problem Link: https://adventofcode.com/2022/day/4
 
-[Previous Day](day_03).livemd
+[Previous Day](day_03.livemd)
 [Next Day](day_05.livemd)
 
 ## Input Data
