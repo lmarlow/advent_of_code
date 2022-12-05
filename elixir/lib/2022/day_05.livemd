@@ -150,7 +150,7 @@ stacks =
   |> Enum.map(fn {stack, crates} -> {stack, Enum.reverse(crates)} end)
   |> Enum.into(%{})
 
-stacks =
+part1_stacks =
   for move_line <- move_lines,
       [num, from, to] =
         Regex.scan(~r"(\d+)", move_line, capture: :first)
@@ -168,7 +168,7 @@ stacks =
   end
 
 for stack <- 1..map_size(stacks), reduce: "" do
-  acc -> acc <> hd(Map.get(stacks, stack))
+  acc -> acc <> hd(Map.get(part1_stacks, stack))
 end
 ```
 
@@ -251,5 +251,21 @@ ends up on top of each stack?*
 <!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
+part2_stacks =
+  for move_line <- move_lines,
+      [num, from, to] =
+        Regex.scan(~r"(\d+)", move_line, capture: :first)
+        |> List.flatten()
+        |> Enum.map(&String.to_integer/1),
+      reduce: stacks do
+    acc ->
+      {take, left} = Enum.split(Map.get(acc, from), num)
+      to_stack = take ++ Map.get(acc, to)
 
+      Map.merge(acc, %{from => left, to => to_stack})
+  end
+
+for stack <- 1..map_size(stacks), reduce: "" do
+  acc -> acc <> hd(Map.get(part2_stacks, stack))
+end
 ```
