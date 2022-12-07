@@ -170,9 +170,7 @@ defmodule AdventOfCode.Y2022.Day07 do
 
   """
   def solve_1(data) do
-    {_fs, sizes} = fs_and_sizes(data)
-
-    for {_key, size} <- sizes, size <= 100_000, reduce: 0 do
+    for {_key, size} <- compute_sizes(data), size <= 100_000, reduce: 0 do
       sum -> sum + size
     end
   end
@@ -214,7 +212,7 @@ defmodule AdventOfCode.Y2022.Day07 do
     total_disk_space = 70_000_000
     unused_space_needed = 30_000_000
 
-    {_fs, sizes} = fs_and_sizes(data)
+    sizes = compute_sizes(data)
     used_space = sizes[["/"]]
     unused_space = total_disk_space - used_space
     need_to_delete = unused_space_needed - unused_space
@@ -232,38 +230,39 @@ defmodule AdventOfCode.Y2022.Day07 do
   defp update_sizes(sizes, [_ | rest] = path, size),
     do: update_sizes(Map.update!(sizes, path, &(&1 + size)), rest, size)
 
-  defp fs_and_sizes(data) do
-    {_, fs, sizes} =
-      for line <- data, reduce: {[], %{}, %{"/" => 0}} do
-        {dir_stack, fs, sizes} ->
+  defp compute_sizes(data) do
+    {_stack, sizes} =
+      for line <- data, reduce: {[], %{}} do
+        {dir_stack, sizes} ->
           case line do
             "$ cd /" ->
-              {["/"], Map.put_new(fs, "/", %{}), Map.put_new(sizes, ["/"], 0)}
+              {["/"], Map.put_new(sizes, ["/"], 0)}
 
             "$ cd .." ->
-              {tl(dir_stack), fs, sizes}
+              {tl(dir_stack), sizes}
 
             "$ cd " <> dir ->
               dir_stack = [dir | dir_stack]
-              path = Enum.reverse(dir_stack)
 
-              {dir_stack, update_in(fs, path, &(&1 || %{})), Map.put_new(sizes, dir_stack, 0)}
+              {dir_stack, Map.put_new(sizes, dir_stack, 0)}
 
             "$ ls" ->
-              {dir_stack, fs, sizes}
+              {dir_stack, sizes}
 
             "dir " <> _ ->
-              {dir_stack, fs, sizes}
+              {dir_stack, sizes}
 
             size_and_file ->
-              [size, file] = String.split(size_and_file)
-              file_path = Enum.reverse([file | dir_stack])
-              size = String.to_integer(size)
+              size =
+                size_and_file
+                |> String.split()
+                |> hd()
+                |> String.to_integer()
 
-              {dir_stack, put_in(fs, file_path, size), update_sizes(sizes, dir_stack, size)}
+              {dir_stack, update_sizes(sizes, dir_stack, size)}
           end
       end
 
-    {fs, sizes}
+    sizes
   end
 end
