@@ -219,10 +219,10 @@ defmodule AdventOfCode.Y2022.Day07 do
     unused_space = total_disk_space - used_space
     need_to_delete = unused_space_needed - unused_space
 
-    for {_path, size} <- sizes, size >= need_to_delete, reduce: total_disk_space do
-      bigger when bigger > size -> size
-      smaller -> smaller
-    end
+    sizes
+    |> Map.values()
+    |> Enum.filter(&(&1 >= need_to_delete))
+    |> Enum.min()
   end
 
   # --- </Solution Functions> ---
