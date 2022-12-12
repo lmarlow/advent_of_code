@@ -26,11 +26,11 @@ defmodule AdventOfCode.Y2022.Day08Test do
 
   describe "part 2" do
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 8
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 268_912
     end
   end
 end
