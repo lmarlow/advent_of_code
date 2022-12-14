@@ -29,11 +29,26 @@ defmodule AdventOfCode.Y2022.Day09Test do
 
   describe "part 2" do
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 1
+    end
+
+    test "larger example" do
+      sample = ~S"""
+      R 5
+      U 8
+      L 8
+      D 3
+      R 17
+      D 10
+      L 25
+      U 20
+      """
+
+      assert Solution.run(@sample_data, 2) == 36
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      # assert Solution.run(2) == nil
     end
   end
 end
