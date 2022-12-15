@@ -32,6 +32,15 @@ defmodule AdventOfCode.Y2022.Day09Test do
       assert Solution.run(@sample_data, 2) == 1
     end
 
+    test "tiny example" do
+      sample = ~S"""
+      R 4
+      U 4
+      """
+
+      assert Solution.run(sample, 2) == 1
+    end
+
     test "larger example" do
       sample = ~S"""
       R 5
@@ -44,11 +53,11 @@ defmodule AdventOfCode.Y2022.Day09Test do
       U 20
       """
 
-      assert Solution.run(@sample_data, 2) == 36
+      assert Solution.run(sample, 2) == 36
     end
 
     test "input file" do
-      # assert Solution.run(2) == nil
+      assert Solution.run(2) == 2331
     end
   end
 end

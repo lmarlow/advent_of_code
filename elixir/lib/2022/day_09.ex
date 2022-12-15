@@ -308,24 +308,9 @@ defmodule AdventOfCode.Y2022.Day09 do
   """
   def solve_1(data) do
     data
-    |> Enum.map(&String.split/1)
-    |> Enum.map(fn [dir, num] -> {dir, String.to_integer(num)} end)
-    |> Enum.flat_map(fn {dir, num} -> List.duplicate(dir, num) end)
-    |> Enum.reduce([{0, 0}], fn dir, [{x0, y0} = _p0 | _] = acc ->
-      p1 =
-        case dir do
-          "U" -> {x0, y0 + 1}
-          "D" -> {x0, y0 - 1}
-          "L" -> {x0 - 1, y0}
-          "R" -> {x0 + 1, y0}
-        end
-
-      [p1 | acc]
-    end)
-    |> Enum.reverse()
-    |> Enum.reduce({{0, 0}, [{0, 0}]}, &follow_reduce/2)
-    |> elem(1)
-    |> tap(&print_board(&1, false))
+    |> head_positions()
+    |> follow()
+    |> tap(&print_rounds(&1, false))
     |> MapSet.new()
     |> Enum.count()
   end
@@ -782,6 +767,19 @@ defmodule AdventOfCode.Y2022.Day09 do
   once?*
   """
   def solve_2(data) do
+    for i <- 1..9, reduce: [head_positions(data)] do
+      [previous_positions | _] = acc ->
+        [follow(previous_positions) | acc]
+    end
+    |> tap(&print_rounds(&1, false))
+    |> hd()
+    |> MapSet.new()
+    |> Enum.count()
+  end
+
+  # --- </Solution Functions> ---
+
+  defp head_positions(data) do
     data
     |> Enum.map(&String.split/1)
     |> Enum.map(fn [dir, num] -> {dir, String.to_integer(num)} end)
@@ -797,37 +795,62 @@ defmodule AdventOfCode.Y2022.Day09 do
 
       [p1 | acc]
     end)
-    |> Enum.reduce({{0, 0}, [{0, 0}]}, &follow_reduce/2)
-    |> elem(1)
-    |> tap(&print_board(&1, false))
-    |> MapSet.new()
-    |> Enum.count()
+    |> Enum.reverse()
   end
 
-  # --- </Solution Functions> ---
-
-  defp touching?({x0, y0}, p1) do
-    p1 in for dx <- -1..1, dy <- -1..1, do: {x0 + dx, y0 + dy}
+  defp next_position({x0, y0}, {x1, y1} = current)
+       when abs(x0 - x1) <= 1 and abs(y0 - y1) <= 1 do
+    current
   end
 
-  defp follow_reduce(leader_current, {leader_prev, [current | _] = positions}) do
-    next = if touching?(current, leader_current), do: current, else: leader_prev
-    {leader_current, [next | positions]}
+  defp next_position({x0, y0}, {x1, y1}) do
+    {x1 + delta(x0, x1), y1 + delta(y0, y1)}
   end
 
-  defp print_board(_, false), do: :ok
+  defp delta(n, n), do: 0
+  defp delta(x, y) when x > y, do: 1
+  defp delta(x, y) when x < y, do: -1
 
-  defp print_board(positions, _) do
-    xs = positions |> Enum.map(fn {x, _} -> x end)
-    ys = positions |> Enum.map(fn {_, y} -> y end)
+  defp follow(leader_positions) do
+    leader_positions
+    |> Enum.reduce([], &follow_reduce/2)
+    |> Enum.reverse()
+  end
+
+  defp follow_reduce(leader_current, []), do: [leader_current]
+
+  defp follow_reduce(leader_current, [current | _] = positions) do
+    [next_position(leader_current, current) | positions]
+  end
+
+  defp print_rounds(_, false), do: :ok
+
+  defp print_rounds([list | _] = segment_position_lists, true) when is_list(list) do
+    all_positions = List.flatten(segment_position_lists)
+    xs = all_positions |> Enum.map(fn {x, _} -> x end)
+    ys = all_positions |> Enum.map(fn {_, y} -> y end)
+
     {xmin, xmax} = Enum.min_max(xs)
     {ymin, ymax} = Enum.min_max(ys)
 
+    for round_positions <-
+          Enum.zip(segment_position_lists)
+          |> Enum.map(&Tuple.to_list/1)
+          |> Enum.map(&Enum.reverse/1) do
+      print_board(round_positions, {{xmin, ymin}, {xmax, ymax}})
+      IO.puts("")
+    end
+  end
+
+  defp print_board(segments, {{xmin, ymin}, {xmax, ymax}}) do
     for y <- ymax..min(ymin, 0) do
       for x <- min(xmin, 0)..xmax do
-        if {x, y} in positions, do: "#", else: "."
+        if idx = Enum.find_index(segments, &(&1 == {x, y})), do: label(idx), else: "."
       end
       |> IO.puts()
     end
   end
+
+  defp label(0), do: "H"
+  defp label(n), do: to_string(n)
 end
