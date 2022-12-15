@@ -178,17 +178,39 @@ defmodule AdventOfCode.Y2022.Day10Test do
     end
 
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(1) == 12460
     end
   end
 
   describe "part 2" do
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      expected_display =
+        ~S"""
+        ##..##..##..##..##..##..##..##..##..##..
+        ###...###...###...###...###...###...###.
+        ####....####....####....####....####....
+        #####.....#####.....#####.....#####.....
+        ######......######......######......####
+        #######.......#######.......#######.....
+        """
+        |> String.trim()
+
+      assert Solution.run(@sample_data, 2) == expected_display
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      expected_display =
+        ~S"""
+        ####.####.####.###..###...##..#..#.#....
+        #.......#.#....#..#.#..#.#..#.#.#..#....
+        ###....#..###..#..#.#..#.#..#.##...#....
+        #.....#...#....###..###..####.#.#..#....
+        #....#....#....#....#.#..#..#.#.#..#....
+        ####.####.#....#....#..#.#..#.#..#.####.
+        """
+        |> String.trim()
+
+      assert Solution.run(2) == expected_display
     end
   end
 end
