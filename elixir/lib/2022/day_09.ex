@@ -308,9 +308,9 @@ defmodule AdventOfCode.Y2022.Day09 do
   """
   def solve_1(data) do
     data
-    |> head_positions()
-    |> follow()
+    |> positions(1)
     |> tap(&print_rounds(&1, false))
+    |> hd()
     |> MapSet.new()
     |> Enum.count()
   end
@@ -767,10 +767,8 @@ defmodule AdventOfCode.Y2022.Day09 do
   once?*
   """
   def solve_2(data) do
-    for i <- 1..9, reduce: [head_positions(data)] do
-      [previous_positions | _] = acc ->
-        [follow(previous_positions) | acc]
-    end
+    data
+    |> positions()
     |> tap(&print_rounds(&1, false))
     |> hd()
     |> MapSet.new()
@@ -778,6 +776,13 @@ defmodule AdventOfCode.Y2022.Day09 do
   end
 
   # --- </Solution Functions> ---
+
+  def positions(data, segments \\ 9) do
+    for _i <- 1..segments, reduce: [head_positions(data)] do
+      [previous_positions | _] = acc ->
+        [follow(previous_positions) | acc]
+    end
+  end
 
   defp head_positions(data) do
     data
@@ -823,9 +828,19 @@ defmodule AdventOfCode.Y2022.Day09 do
     [next_position(leader_current, current) | positions]
   end
 
-  defp print_rounds(_, false), do: :ok
+  def print_rounds(
+        segment_position_lists,
+        enabled?,
+        round_fn \\ fn board ->
+          IO.puts(board)
+          IO.puts("")
+        end
+      )
 
-  defp print_rounds([list | _] = segment_position_lists, true) when is_list(list) do
+  def print_rounds(_, false, _), do: :ok
+
+  def print_rounds([list | _] = segment_position_lists, true, print_fn)
+      when is_list(list) do
     all_positions = List.flatten(segment_position_lists)
     xs = all_positions |> Enum.map(fn {x, _} -> x end)
     ys = all_positions |> Enum.map(fn {_, y} -> y end)
@@ -838,17 +853,18 @@ defmodule AdventOfCode.Y2022.Day09 do
           |> Enum.map(&Tuple.to_list/1)
           |> Enum.map(&Enum.reverse/1) do
       print_board(round_positions, {{xmin, ymin}, {xmax, ymax}})
-      IO.puts("")
+      |> print_fn.()
     end
   end
 
-  defp print_board(segments, {{xmin, ymin}, {xmax, ymax}}) do
+  def print_board(segments, {{xmin, ymin}, {xmax, ymax}}) do
     for y <- ymax..min(ymin, 0) do
       for x <- min(xmin, 0)..xmax do
         if idx = Enum.find_index(segments, &(&1 == {x, y})), do: label(idx), else: "."
       end
-      |> IO.puts()
+      |> Enum.join()
     end
+    |> Enum.join("\n")
   end
 
   defp label(0), do: "H"

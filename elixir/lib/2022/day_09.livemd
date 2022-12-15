@@ -7,11 +7,12 @@ Mix.install([
   {:kino, "~> 0.7.0"},
   {:vega_lite, "~> 0.1.4"},
   {:kino_vega_lite, "~> 0.1.1"},
-  {:nx, github: "elixir-nx/nx", sparse: "nx"}
+  {:nx, github: "elixir-nx/nx", sparse: "nx"},
+  {:advent_of_code, path: "Code/mine/advent_of_code/elixir"}
 ])
 ```
 
-##  Day 9: Rope Bridge
+## Day 9: Rope Bridge
 
 Problem Link: https://adventofcode.com/2022/day/9
 
@@ -56,7 +57,8 @@ positions of the knots on a two-dimensional grid. Then, by following a
 hypothetical *series of motions* (your puzzle input) for the head, you
 can determine how the tail will move.
 
-<span title="I'm an engineer, not a physicist!">Due to the
+<span title="I'm an engineer, not a physicist!">
+Due to the
 aforementioned Planck lengths</span>, the rope must be quite short; in
 fact, the head (`H`) and tail (`T`) must *always be touching*
 (diagonally adjacent and even overlapping both count as touching):
@@ -323,3 +325,51 @@ positions does the tail of the rope visit at least once?*
 ```elixir
 
 ```
+</span>
+
+```elixir
+AdventOfCode.Y2022.Day09.solve(lines, 2)
+```
+
+```elixir
+segment_position_lists = AdventOfCode.Y2022.Day09.positions(lines)
+```
+
+```elixir
+all_positions = List.flatten(segment_position_lists)
+xs = all_positions |> Enum.map(fn {x, _} -> x end)
+ys = all_positions |> Enum.map(fn {_, y} -> y end)
+
+{xmin, xmax} = Enum.min_max(xs)
+{ymin, ymax} = Enum.min_max(ys)
+bounds = {{xmin, ymin}, {xmax, ymax}}
+```
+
+```elixir
+rounds =
+  segment_position_lists
+  |> Enum.zip()
+  |> Enum.map(&Tuple.to_list/1)
+  |> Enum.map(&Enum.reverse/1)
+```
+
+````elixir
+total_frames = length(rounds)
+
+if false do
+  Kino.animate(10, rounds, fn
+    _event, [] ->
+      :halt
+
+    counter, [round | rest] ->
+      md =
+        ("**Frame: `#{counter}` of `#{total_frames}`**\n" <>
+           "```\n" <>
+           AdventOfCode.Y2022.Day09.print_board(round, bounds) <>
+           "\n```")
+        |> Kino.Markdown.new()
+
+      {:cont, md, rest}
+  end)
+end
+````
