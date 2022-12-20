@@ -20,7 +20,52 @@ defmodule AdventOfCode.Y2022.Day11 do
 
   def parse(data) do
     data
-    |> String.split("\n", trim: true)
+    |> String.split("\n\n", trim: true)
+  end
+
+  defstruct [
+    :id,
+    :items,
+    :operator_fun,
+    :operand,
+    :chooser_modulus,
+    :mod_zero_monkey,
+    :other_monkey,
+    :boredom_divisor,
+    :inspection_count
+  ]
+
+  def new(monkey_stanza, boredom_divisor \\ 3) when is_binary(monkey_stanza) do
+    [
+      "Monkey " <> <<id::binary-size(1), ":">>,
+      "  Starting items: " <> items,
+      "  Operation: new = old " <> <<operator::binary-size(1), " ", operand::binary>>,
+      "  Test: divisible by " <> divisor,
+      "    If true: throw to monkey " <> true_monkey,
+      "    If false: throw to monkey " <> other_monkey | _
+    ] = String.split(monkey_stanza, "\n")
+
+    id = String.to_integer(id)
+    items = items |> String.split(", ") |> Enum.map(&String.to_integer/1)
+
+    {operator_fun, operand} =
+      case {operator, operand} do
+        {"*", "old"} -> {&Kernel.**/2, 2}
+        {"*", num} -> {&Kernel.*/2, String.to_integer(num)}
+        {"+", num} -> {&Kernel.+/2, String.to_integer(num)}
+      end
+
+    %__MODULE__{
+      id: id,
+      items: items,
+      operator_fun: operator_fun,
+      operand: operand,
+      chooser_modulus: String.to_integer(divisor),
+      mod_zero_monkey: String.to_integer(true_monkey),
+      other_monkey: String.to_integer(other_monkey),
+      boredom_divisor: boredom_divisor,
+      inspection_count: 0
+    }
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -282,16 +327,87 @@ defmodule AdventOfCode.Y2022.Day11 do
   rounds of stuff-slinging simian shenanigans?*
 
   """
-  def solve_1(data) do
-    {1, :not_implemented}
+  def solve_1(monkey_stanzas) do
+    monkey_stanzas
+    |> Enum.map(&new(&1, 3))
+    |> Enum.into(%{}, fn %{id: id} = m -> {id, m} end)
+    |> rounds(20)
+    |> score()
   end
 
   @doc """
   # Part 2
   """
-  def solve_2(data) do
-    {2, :not_implemented}
+  def solve_2(monkey_stanzas) do
+    monkey_stanzas
+    |> Enum.map(&new(&1, 1))
+    |> Enum.into(%{}, fn %{id: id} = m -> {id, m} end)
+    |> rounds(10000)
+    |> score()
   end
 
   # --- </Solution Functions> ---
+
+  def next_monkey_and_level(
+        old_level,
+        %__MODULE__{
+          operator_fun: operator_fun,
+          operand: operand,
+          boredom_divisor: boredom_divisor,
+          chooser_modulus: chooser_modulus,
+          mod_zero_monkey: mod_zero_monkey,
+          other_monkey: other_monkey
+        } = m
+      ) do
+    new_level = operator_fun.(old_level, operand)
+    new_level = if boredom_divisor == 1, do: new_level, else: div(new_level, boredom_divisor)
+
+    if Integer.mod(new_level, chooser_modulus) == 0 do
+      {mod_zero_monkey, new_level}
+    else
+      {other_monkey, new_level}
+    end
+  end
+
+  def rounds(monkeys, n) do
+    max_index = monkeys |> Enum.map(fn {id, _} -> id end) |> Enum.max()
+
+    big_mod =
+      monkeys
+      |> Enum.map(fn {_, %{chooser_modulus: n}} -> n end)
+      |> Enum.uniq()
+      |> Enum.sort()
+      |> Enum.product()
+
+    for round <- 1..n, id <- 0..max_index, reduce: monkeys do
+      acc ->
+        m = Map.fetch!(acc, id)
+
+        for item <- m.items,
+            reduce:
+              Map.put(acc, id, %{
+                m
+                | items: [],
+                  inspection_count: m.inspection_count + length(m.items)
+              }) do
+          acc ->
+            {destination_id, new_level} = next_monkey_and_level(item, m)
+            new_level = Integer.mod(new_level, big_mod)
+            destination_monkey = Map.fetch!(acc, destination_id)
+
+            Map.put(acc, destination_id, %{
+              destination_monkey
+              | items: [new_level | destination_monkey.items]
+            })
+        end
+    end
+  end
+
+  def score(rounds) do
+    rounds
+    |> Enum.map(fn {_id, %{inspection_count: c}} -> c end)
+    |> Enum.sort(:desc)
+    |> Enum.take(2)
+    |> Enum.product()
+  end
 end
