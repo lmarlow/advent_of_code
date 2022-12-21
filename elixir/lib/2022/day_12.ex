@@ -88,52 +88,20 @@ defmodule AdventOfCode.Y2022.Day12 do
 
   """
   def solve_1(data) do
-    dim_y = length(data)
-    dim_x = length(hd(data))
+    graph = build_graph(data)
 
-    {start, finish, graph} =
-      for {row, y} <- Enum.with_index(data),
-          {height, x} <- Enum.with_index(row),
-          point = {x, y},
-          reduce: {nil, nil, :digraph.new()} do
-        {start, finish, g} ->
-          v1 = :digraph.add_vertex(g, {{x, y}, height}, height)
-          start = if height == ?S, do: v1, else: start
-          finish = if height == ?E, do: v1, else: finish
+    start =
+      graph
+      |> :digraph.vertices()
+      |> Enum.find(fn {{_, _}, height} -> height == ?S end)
 
-          for dx <- -1..1,
-              dy <- -1..1,
-              dx == 0 or dy == 0,
-              {nx, ny} = neighbor = {x + dx, y + dy},
-              neighbor != point,
-              nx >= 0,
-              ny >= 0,
-              nx < dim_x,
-              ny < dim_y,
-              nh = data |> Enum.at(ny) |> Enum.at(nx) do
-            reachable? =
-              case {height, nh} do
-                {h, h} -> true
-                {_, ?S} -> false
-                {?E, _} -> false
-                {?S, ?a} -> true
-                {?S, _} -> false
-                {?z, ?E} -> true
-                {_, ?E} -> false
-                {h, nh} when h + 1 == nh or nh < h -> true
-                _ -> false
-              end
+    finish =
+      graph
+      |> :digraph.vertices()
+      |> Enum.find(fn {{_, _}, height} -> height == ?E end)
 
-            if reachable? do
-              v2 = :digraph.add_vertex(g, {{nx, ny}, nh})
-              :digraph.add_edge(g, v1, v2)
-            end
-          end
-
-          {start, finish, g}
-      end
-
-    (:digraph.get_short_path(graph, start, finish) |> length()) - 1
+    path = :digraph.get_short_path(graph, start, finish)
+    length(path) - 1
   end
 
   @doc """
@@ -173,11 +141,68 @@ defmodule AdventOfCode.Y2022.Day12 do
   elevation `a` to the location that should get the best signal?*
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    graph = build_graph(data)
+
+    starts =
+      graph
+      |> :digraph.vertices()
+      |> Enum.filter(fn {{_, _}, height} -> height in [?S, ?a] end)
+
+    finish =
+      graph
+      |> :digraph.vertices()
+      |> Enum.find(fn {{_, _}, height} -> height == ?E end)
+
+    starts
+    |> Enum.map(fn start -> :digraph.get_short_path(graph, start, finish) end)
+    |> Enum.filter(& &1)
+    |> Enum.map(fn path -> length(path) - 1 end)
+    |> Enum.min()
   end
 
   # --- </Solution Functions> ---
 
-  def neighbors({x, y}, height) do
+  def build_graph(data) do
+    dim_y = length(data)
+    dim_x = length(hd(data))
+
+    for {row, y} <- Enum.with_index(data),
+        {height, x} <- Enum.with_index(row),
+        point = {x, y},
+        reduce: :digraph.new() do
+      g ->
+        v1 = :digraph.add_vertex(g, {{x, y}, height}, height)
+
+        for dx <- -1..1,
+            dy <- -1..1,
+            dx == 0 or dy == 0,
+            {nx, ny} = neighbor = {x + dx, y + dy},
+            neighbor != point,
+            nx >= 0,
+            ny >= 0,
+            nx < dim_x,
+            ny < dim_y,
+            nh = data |> Enum.at(ny) |> Enum.at(nx) do
+          reachable? =
+            case {height, nh} do
+              {h, h} -> true
+              {_, ?S} -> false
+              {?E, _} -> false
+              {?S, ?a} -> true
+              {?S, _} -> false
+              {?z, ?E} -> true
+              {_, ?E} -> false
+              {h, nh} when h + 1 == nh or nh < h -> true
+              _ -> false
+            end
+
+          if reachable? do
+            v2 = :digraph.add_vertex(g, {{nx, ny}, nh})
+            :digraph.add_edge(g, v1, v2)
+          end
+        end
+
+        g
+    end
   end
 end
