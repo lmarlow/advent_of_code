@@ -20,16 +20,11 @@ defmodule AdventOfCode.Y2022.Day13 do
 
   def parse(data) do
     data
-    |> String.split("\n\n", trim: true)
-    |> Enum.map(fn chunk ->
-      chunk
-      |> String.split("\n", trim: true)
-      |> Enum.map(fn code ->
-        {list, _} = Code.eval_string(code)
-        list
-      end)
+    |> String.split("\n", trim: true)
+    |> Enum.map(fn code ->
+      {list, _} = Code.eval_string(code)
+      list
     end)
-    |> Enum.map(&List.to_tuple/1)
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -184,18 +179,70 @@ defmodule AdventOfCode.Y2022.Day13 do
   """
   def solve_1(data) do
     data
+    |> Enum.chunk_every(2)
+    |> Enum.map(&List.to_tuple/1)
     |> Enum.with_index(1)
     |> Enum.filter(&correct_order?/1)
     |> Enum.map(&elem(&1, 1))
-    |> IO.inspect()
     |> Enum.sum()
   end
 
   @doc """
   # Part 2
+
+  Now, you just need to put *all* of the packets in the right order.
+  Disregard the blank lines in your list of received packets.
+
+  The distress signal protocol also requires that you include two
+  additional *divider packets*:
+
+      [[2]]
+      [[6]]
+
+  Using the same rules as before, organize all packets - the ones in your
+  list of received packets as well as the two divider packets - into the
+  correct order.
+
+  For the example above, the result of putting the packets in the correct
+  order is:
+
+      []
+      [[]]
+      [[[]]]
+      [1,1,3,1,1]
+      [1,1,5,1,1]
+      [[1],[2,3,4]]
+      [1,[2,[3,[4,[5,6,0]]]],8,9]
+      [1,[2,[3,[4,[5,6,7]]]],8,9]
+      [[1],4]
+      [[2]]
+      [3]
+      [[4,4],4,4]
+      [[4,4],4,4,4]
+      [[6]]
+      [7,7,7]
+      [7,7,7,7]
+      [[8,7,6]]
+      [9]
+
+  Afterward, locate the divider packets. To find the *decoder key* for
+  this distress signal, you need to determine the indices of the two
+  divider packets and multiply them together. (The first packet is at
+  index 1, the second packet is at index 2, and so on.) In this example,
+  the divider packets are *10th* and *14th*, and so the decoder key is
+  *`140`*.
+
+  Organize all of the packets into the correct order. *What is the decoder
+  key for the distress signal?*
+
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    [[[2]], [[6]] | data]
+    |> Enum.sort(&correct_order?/2)
+    |> Enum.with_index(1)
+    |> Enum.filter(fn {packet, _index} -> packet in [[[2]], [[6]]] end)
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.product()
   end
 
   # --- </Solution Functions> ---
