@@ -209,21 +209,73 @@ defmodule AdventOfCode.Y2022.Day14 do
     |> new()
     |> fill()
     |> Stream.drop_while(&(&1.full? == false))
-    |> Enum.map(&draw/1)
     |> Enum.map(& &1.sand_count)
     |> Enum.max()
   end
 
   @doc """
   # Part 2
+
+  You realize you misread the scan. There isn't an <span
+  title="Endless Void is my C cover band.">endless void</span> at the
+  bottom of the scan - there's floor, and you're standing on it!
+
+  You don't have time to scan the floor, so assume the floor is an
+  infinite horizontal line with a `y` coordinate equal to *two plus the
+  highest `y` coordinate* of any point in your scan.
+
+  In the example above, the highest `y` coordinate of any point is `9`,
+  and so the floor is at `y=11`. (This is as if your scan contained one
+  extra rock path like `-infinity,11 -> infinity,11`.) With the added
+  floor, the example above now looks like this:
+
+              ...........+........
+              ....................
+              ....................
+              ....................
+              .........#...##.....
+              .........#...#......
+              .......###...#......
+              .............#......
+              .............#......
+              .....#########......
+              ....................
+      <-- etc #################### etc -->
+
+  To find somewhere safe to stand, you'll need to simulate falling sand
+  until a unit of sand comes to rest at `500,0`, blocking the source
+  entirely and stopping the flow of sand into the cave. In the example
+  above, the situation finally looks like this after *`93`* units of sand
+  come to rest:
+
+      ............o............
+      ...........ooo...........
+      ..........ooooo..........
+      .........ooooooo.........
+      ........oo#ooo##o........
+      .......ooo#ooo#ooo.......
+      ......oo###ooo#oooo......
+      .....oooo.oooo#ooooo.....
+      ....oooooooooo#oooooo....
+      ...ooo#########ooooooo...
+      ..ooooo.......ooooooooo..
+      #########################
+
+  Using your scan, simulate the falling sand until the source of the sand
+  becomes blocked. *How many units of sand come to rest?*
   """
   def solve_2(data) do
-    {2, :not_implemented, data}
+    data
+    |> new(true)
+    |> fill()
+    |> Stream.drop_while(&(&1.full? == false))
+    |> Enum.map(& &1.sand_count)
+    |> Enum.max()
   end
 
   # --- </Solution Functions> ---
 
-  def new(data) do
+  def new(data, include_floor? \\ false) do
     grid =
       for wall <- data,
           {{x0, y0}, {x1, y1}} <- wall,
@@ -236,11 +288,23 @@ defmodule AdventOfCode.Y2022.Day14 do
     {xmin, xmax} = grid |> Map.keys() |> Enum.map(fn {x, _y} -> x end) |> Enum.min_max()
     {ymin, ymax} = grid |> Map.keys() |> Enum.map(fn {_x, y} -> y end) |> Enum.min_max()
 
+    {{xmin, _ymin}, {xmax, ymax}} =
+      bounds =
+      if include_floor? do
+        {{min(xmin - 200, 500), min(ymin, 1)}, {max(xmax + 200, 500), max(ymax + 2, 1)}}
+      else
+        {{min(xmin, 500), min(ymin, 1)}, {max(xmax, 500), max(ymax, 1)}}
+      end
+
+    grid =
+      if include_floor? do
+        for x <- xmin..xmax, floor = {x, ymax}, into: grid, do: {floor, "#"}
+      else
+        grid
+      end
+
     __MODULE__
-    |> struct(
-      grid: grid,
-      bounds: {{min(xmin, 500), min(ymin, 1)}, {max(xmax, 500), max(ymax, 1)}}
-    )
+    |> struct(grid: grid, bounds: bounds)
   end
 
   def fill(%{bounds: bounds} = cave) do
@@ -263,6 +327,14 @@ defmodule AdventOfCode.Y2022.Day14 do
             |> Enum.find(fn pos -> is_nil(Map.get(grid, pos)) end)
 
           cond do
+            is_nil(next) and prev_pos == drop_pos ->
+              {%{
+                 cave
+                 | grid: Map.put(cave.grid, drop_pos, "o"),
+                   full?: true,
+                   sand_count: cave.sand_count + 1
+               }, :halt}
+
             is_nil(next) ->
               {cave, {drop_pos, %{cave | sand_count: cave.sand_count + 1}}}
 
