@@ -19,8 +19,15 @@ defmodule AdventOfCode.Y2022.Day15 do
   def run(data, part) when is_list(data), do: data |> solve(part)
 
   def parse(data) do
-    data
-    |> String.split("\n", trim: true)
+    Regex.scan(
+      ~r/Sensor at x=(?<x0>-?\d+), y=(?<y0>-?\d+): closest beacon is at x=(?<x1>-?\d+), y=(?<y1>-?\d+)/,
+      data,
+      capture: :all_but_first
+    )
+    |> Enum.map(fn str_coords -> Enum.map(str_coords, &String.to_integer/1) end)
+    |> Enum.map(fn [x0, y0, x1, y1] ->
+      {{x0, y0}, {x1, y1}}
+    end)
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -166,7 +173,38 @@ defmodule AdventOfCode.Y2022.Day15 do
 
   """
   def solve_1(data) do
-    {1, :not_implemented}
+    row = if length(data) < 40, do: 10, else: 2_000_000
+
+    grid =
+      for {{sx, sy}, {bx, by}} <- data, reduce: %{} do
+        acc ->
+          sensor_row = Map.get(acc, sy, %{})
+          sensor_row = Map.put(sensor_row, sx, "S")
+          acc = Map.put(acc, sy, sensor_row)
+
+          beacon_row = Map.get(acc, by, %{})
+          beacon_row = Map.put(beacon_row, bx, "B")
+          Map.put(acc, by, beacon_row)
+      end
+
+    for {{sx, sy} = s, b} <- data,
+        d = distance(s, b),
+        x <- (sx - d)..(sx + d),
+        y <- (sy - d)..(sy + d),
+        {x, y} != s,
+        {x, y} != b,
+        distance({x, y}, s) <= d,
+        reduce: grid do
+      acc ->
+        row_data = Map.get(acc, y, %{})
+        row_data = Map.put_new(row_data, x, "#")
+        Map.put(acc, y, row_data)
+    end
+    # |> Enum.filter(fn {{_x, y}, v} -> y == row and v == "#" end)
+    |> Map.get(row)
+    |> Map.values()
+    |> List.delete("B")
+    |> Enum.count()
   end
 
   @doc """
@@ -177,4 +215,8 @@ defmodule AdventOfCode.Y2022.Day15 do
   end
 
   # --- </Solution Functions> ---
+
+  def distance({x0, y0}, {x1, y1}) do
+    abs(x0 - x1) + abs(y0 - y1)
+  end
 end
