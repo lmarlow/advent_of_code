@@ -6,6 +6,8 @@ defmodule AdventOfCode.Y2022.Day14 do
   """
   use AdventOfCode.Helpers.InputReader, year: 2022, day: 14
 
+  defstruct grid: %{}, bounds: {{0, 0}, {0, 0}}, sand_count: 0, full?: false
+
   @doc ~S"""
   Sample data:
 
@@ -21,6 +23,18 @@ defmodule AdventOfCode.Y2022.Day14 do
   def parse(data) do
     data
     |> String.split("\n", trim: true)
+    |> Enum.map(fn line ->
+      line
+      |> String.split(" -> ")
+      |> Enum.map(
+        &(&1
+          |> String.split(",")
+          |> Enum.map(fn n -> String.to_integer(n) end)
+          |> List.to_tuple())
+      )
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.map(&List.to_tuple/1)
+    end)
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -191,15 +205,104 @@ defmodule AdventOfCode.Y2022.Day14 do
 
   """
   def solve_1(data) do
-    {1, :not_implemented}
+    data
+    |> new()
+    |> fill()
+    |> Stream.drop_while(&(&1.full? == false))
+    |> Enum.map(&draw/1)
+    |> Enum.map(& &1.sand_count)
+    |> Enum.max()
   end
 
   @doc """
   # Part 2
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    {2, :not_implemented, data}
   end
 
   # --- </Solution Functions> ---
+
+  def new(data) do
+    grid =
+      for wall <- data,
+          {{x0, y0}, {x1, y1}} <- wall,
+          x <- x0..x1,
+          y <- y0..y1,
+          into: %{} do
+        {{x, y}, "#"}
+      end
+
+    {xmin, xmax} = grid |> Map.keys() |> Enum.map(fn {x, _y} -> x end) |> Enum.min_max()
+    {ymin, ymax} = grid |> Map.keys() |> Enum.map(fn {_x, y} -> y end) |> Enum.min_max()
+
+    __MODULE__
+    |> struct(
+      grid: grid,
+      bounds: {{min(xmin, 500), min(ymin, 1)}, {max(xmax, 500), max(ymax, 1)}}
+    )
+  end
+
+  def fill(%{bounds: bounds} = cave) do
+    drop_pos = {500, 0}
+    cave = %{cave | grid: Map.put(cave.grid, drop_pos, "o")}
+
+    Stream.unfold(
+      {drop_pos, cave},
+      fn
+        :halt ->
+          nil
+
+        {{sand_x, sand_y} = prev_pos, %{grid: grid} = cave} ->
+          down = {sand_x, sand_y + 1}
+          left = {sand_x - 1, sand_y + 1}
+          right = {sand_x + 1, sand_y + 1}
+
+          next =
+            [down, left, right]
+            |> Enum.find(fn pos -> is_nil(Map.get(grid, pos)) end)
+
+          cond do
+            is_nil(next) ->
+              {cave, {drop_pos, %{cave | sand_count: cave.sand_count + 1}}}
+
+            outside?(next, bounds) ->
+              cave = move(cave, prev_pos, next, "~")
+              {%{cave | full?: true}, :halt}
+
+            true ->
+              cave = move(cave, prev_pos, next)
+              {cave, {next, cave}}
+          end
+      end
+    )
+  end
+
+  def outside?({x, y}, {{xmin, ymin}, {xmax, ymax}}) do
+    x < xmin or x > xmax or y < ymin or y > ymax
+  end
+
+  def move(%{grid: grid} = cave, prev, next, val \\ "o") do
+    %{
+      cave
+      | grid:
+          grid
+          |> Map.delete(prev)
+          |> Map.put(next, val)
+    }
+  end
+
+  defimpl String.Chars do
+    def to_string(%{grid: grid, bounds: {{xmin, ymin}, {xmax, ymax}}}) do
+      {{xmin, ymin}, {xmax, ymax}} = {{xmin - 1, ymin - 1}, {xmax + 1, ymax + 1}}
+
+      Enum.map_join(ymin..ymax, "\n", fn y ->
+        Enum.map_join(xmin..xmax, fn x ->
+          Map.get(grid, {x, y}, ".")
+        end)
+      end)
+    end
+  end
+
+  def draw(%{grid: _grid} = cave), do: tap(cave, &IO.puts/1)
 end
