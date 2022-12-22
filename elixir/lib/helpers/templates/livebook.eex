@@ -11,7 +11,7 @@ Mix.install([
   {:advent_of_code, path: "Code/mine/advent_of_code/elixir"}
 ])
 
-alias AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(to_string(day), 2, "0"), as: Day
+alias AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(to_string(day), 2, "0") %>, as: Day
 ```
 
 ##  <%= title %>
