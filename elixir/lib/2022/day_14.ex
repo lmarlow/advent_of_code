@@ -364,16 +364,18 @@ defmodule AdventOfCode.Y2022.Day14 do
     }
   end
 
-  defimpl String.Chars do
-    def to_string(%{grid: grid, bounds: {{xmin, ymin}, {xmax, ymax}}}) do
-      {{xmin, ymin}, {xmax, ymax}} = {{xmin - 1, ymin - 1}, {xmax + 1, ymax + 1}}
+  def to_string(%{grid: grid, bounds: {{xmin, ymin}, {xmax, ymax}}}) do
+    {{xmin, ymin}, {xmax, ymax}} = {{xmin - 1, ymin - 1}, {xmax + 1, ymax + 1}}
 
-      Enum.map_join(ymin..ymax, "\n", fn y ->
-        Enum.map_join(xmin..xmax, fn x ->
-          Map.get(grid, {x, y}, ".")
-        end)
+    Enum.map_join(ymin..ymax, "\n", fn y ->
+      Enum.map_join(xmin..xmax, fn x ->
+        Map.get(grid, {x, y}, ".")
       end)
-    end
+    end)
+  end
+
+  defimpl String.Chars do
+    defdelegate to_string(cave), to: AdventOfCode.Y2022.Day14
   end
 
   def draw(%{grid: _grid} = cave), do: tap(cave, &IO.puts/1)
