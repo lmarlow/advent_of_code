@@ -189,8 +189,9 @@ defmodule AdventOfCode.Y2022.Day15 do
 
     for {{sx, sy} = s, b} <- data,
         d = distance(s, b),
-        x <- (sx - d)..(sx + d),
         y <- (sy - d)..(sy + d),
+        y == row,
+        x <- (sx - d)..(sx + d),
         {x, y} != s,
         {x, y} != b,
         distance({x, y}, s) <= d,
