@@ -26,8 +26,7 @@ defmodule AdventOfCode.MixProject do
       {:httpoison, "~> 1.8.0"},
       {:floki, "~> 0.34.0"},
       {:jason, "~> 1.2"},
-      {:pandex, "~> 0.2"},
-      {:recon, "~> 2.0"}
+      {:pandex, "~> 0.2"}
     ]
   end
 end
