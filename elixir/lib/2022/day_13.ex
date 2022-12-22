@@ -20,7 +20,16 @@ defmodule AdventOfCode.Y2022.Day13 do
 
   def parse(data) do
     data
-    |> String.split("\n", trim: true)
+    |> String.split("\n\n", trim: true)
+    |> Enum.map(fn chunk ->
+      chunk
+      |> String.split("\n", trim: true)
+      |> Enum.map(fn code ->
+        {list, _} = Code.eval_string(code)
+        list
+      end)
+    end)
+    |> Enum.map(&List.to_tuple/1)
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -174,7 +183,12 @@ defmodule AdventOfCode.Y2022.Day13 do
 
   """
   def solve_1(data) do
-    {1, :not_implemented}
+    data
+    |> Enum.with_index(1)
+    |> Enum.filter(&correct_order?/1)
+    |> Enum.map(&elem(&1, 1))
+    |> IO.inspect()
+    |> Enum.sum()
   end
 
   @doc """
@@ -185,4 +199,51 @@ defmodule AdventOfCode.Y2022.Day13 do
   end
 
   # --- </Solution Functions> ---
+
+  def correct_order?({{left, right}, _index}), do: correct_order?(left, right)
+
+  @doc """
+  - If *both values are integers*, the *lower integer* should come first.
+    If the left integer is lower than the right integer, the inputs are in
+    the right order. If the left integer is higher than the right integer,
+    the inputs are not in the right order. Otherwise, the inputs are the
+    same integer; continue checking the next part of the input.
+  - If *both values are lists*, compare the first value of each list, then
+    the second value, and so on. If the left list runs out of items first,
+    the inputs are in the right order. If the right list runs out of items
+    first, the inputs are not in the right order. If the lists are the
+    same length and no comparison makes a decision about the order,
+    continue checking the next part of the input.
+  - If *exactly one value is an integer*, convert the integer to a list
+    which contains that integer as its only value, then retry the
+    comparison. For example, if comparing `[0,0,0]` and `2`, convert the
+    right value to `[2]` (a list containing `2`); the result is then found
+    by instead comparing `[0,0,0]` and `[2]`.
+  """
+  def correct_order?([], [_ | _]), do: true
+  def correct_order?([_ | _], []), do: false
+  def correct_order?([], []), do: :continue
+
+  def correct_order?([int_same | rest_l], [int_same | rest_r]) when is_integer(int_same),
+    do: correct_order?(rest_l, rest_r)
+
+  def correct_order?([int_l | _rest_l], [int_r | _rest_r])
+      when is_integer(int_l) and is_integer(int_r),
+      do: int_l < int_r
+
+  def correct_order?([int | rest], [list | _] = right)
+      when is_integer(int) and is_list(list),
+      do: correct_order?([[int] | rest], right)
+
+  def correct_order?([list | _] = left, [int | rest])
+      when is_integer(int) and is_list(list),
+      do: correct_order?(left, [[int] | rest])
+
+  def correct_order?([list_l | rest_l], [list_r | rest_r])
+      when is_list(list_l) and is_list(list_r) do
+    case correct_order?(list_l, list_r) do
+      val when is_boolean(val) -> val
+      _ -> correct_order?(rest_l, rest_r)
+    end
+  end
 end
