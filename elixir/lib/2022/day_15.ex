@@ -187,22 +187,22 @@ defmodule AdventOfCode.Y2022.Day15 do
           Map.put(acc, by, beacon_row)
       end
 
+    row_data = Map.get(grid, row, %{})
+
     for {{sx, sy} = s, b} <- data,
         d = distance(s, b),
-        y <- (sy - d)..(sy + d),
-        y == row,
-        x <- (sx - d)..(sx + d),
+        y = row,
+        row_d = distance(s, {sx, y}),
+        row_d <= d,
+        dx = abs(y - sy),
+        x <- (sx - (d - dx))..(sx + (d - dx)),
         {x, y} != s,
         {x, y} != b,
-        distance({x, y}, s) <= d,
-        reduce: grid do
+        reduce: row_data do
       acc ->
-        row_data = Map.get(acc, y, %{})
-        row_data = Map.put_new(row_data, x, "#")
-        Map.put(acc, y, row_data)
+        Map.put_new(acc, x, "#")
     end
     # |> Enum.filter(fn {{_x, y}, v} -> y == row and v == "#" end)
-    |> Map.get(row)
     |> Map.values()
     |> List.delete("B")
     |> Enum.count()
