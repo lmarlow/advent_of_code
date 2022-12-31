@@ -210,9 +210,43 @@ defmodule AdventOfCode.Y2022.Day15 do
 
   @doc """
   # Part 2
+
+  Your handheld device indicates that the distress signal is coming from a
+  beacon nearby. The distress beacon is not detected by any sensor, but
+  the distress beacon must have `x` and `y` coordinates each no lower than
+  `0` and no larger than `4000000`.
+
+  To isolate the distress beacon's signal, you need to determine its
+  *tuning frequency*, which can be found by multiplying its `x` coordinate
+  by `4000000` and then adding its `y` coordinate.
+
+  In the example above, the search space is smaller: instead, the `x` and
+  `y` coordinates can each be at most `20`. With this reduced search area,
+  there is only a single position that could have a beacon: `x=14, y=11`.
+  The tuning frequency for this distress beacon is *`56000011`*.
+
+  Find the only possible position for the distress beacon. *What is its
+  tuning frequency?*
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    max_sq = if length(data) < 40, do: 20, else: 4_000_000
+    sensor_perimeter_distances = for {s, b} <- data, into: %{}, do: {s, distance(s, b) + 1}
+
+    possible_points =
+      for {{sx, sy}, d} <- sensor_perimeter_distances,
+          dx <- 0..d,
+          x = sx + dx,
+          x in 0..max_sq,
+          dy = d - x,
+          y = sy + dy,
+          y in 0..max_sq,
+          Enum.all?(sensor_perimeter_distances, fn {s2, d2} -> distance({x, y}, s2) > d2 end) do
+        {x, y}
+      end
+      |> IO.inspect()
+
+    [{x, y}] = possible_points
+    x * 4_000_000 + y
   end
 
   # --- </Solution Functions> ---

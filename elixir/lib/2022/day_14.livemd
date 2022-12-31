@@ -278,7 +278,7 @@ becomes blocked. *How many units of sand come to rest?*
 data
 |> Day.new()
 |> Day.fill()
-|> Stream.zip(Stream.interval(50))
+|> Stream.zip(Stream.interval(1))
 |> Kino.animate(fn {cave, _} ->
   ("```\n" <>
      Day.to_string(cave) <>
