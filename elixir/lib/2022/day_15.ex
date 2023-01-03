@@ -175,19 +175,10 @@ defmodule AdventOfCode.Y2022.Day15 do
   def solve_1(data) do
     row = if length(data) < 40, do: 10, else: 2_000_000
 
-    grid =
-      for {{sx, sy}, {bx, by}} <- data, reduce: %{} do
-        acc ->
-          sensor_row = Map.get(acc, sy, %{})
-          sensor_row = Map.put(sensor_row, sx, "S")
-          acc = Map.put(acc, sy, sensor_row)
-
-          beacon_row = Map.get(acc, by, %{})
-          beacon_row = Map.put(beacon_row, bx, "B")
-          Map.put(acc, by, beacon_row)
+    row_beacons =
+      for {_, {bx, ^row}} <- data, into: MapSet.new() do
+        bx
       end
-
-    row_data = Map.get(grid, row, %{})
 
     for {{sx, sy} = s, b} <- data,
         d = distance(s, b),
@@ -195,16 +186,13 @@ defmodule AdventOfCode.Y2022.Day15 do
         row_d = distance(s, {sx, y}),
         row_d <= d,
         dx = abs(y - sy),
-        x <- (sx - (d - dx))..(sx + (d - dx)),
-        {x, y} != s,
-        {x, y} != b,
-        reduce: row_data do
+        reduce: MapSet.new() do
       acc ->
-        Map.put_new(acc, x, "#")
+        (sx - (d - dx))..(sx + (d - dx))
+        |> MapSet.new()
+        |> MapSet.union(acc)
     end
-    # |> Enum.filter(fn {{_x, y}, v} -> y == row and v == "#" end)
-    |> Map.values()
-    |> List.delete("B")
+    |> MapSet.difference(row_beacons)
     |> Enum.count()
   end
 
