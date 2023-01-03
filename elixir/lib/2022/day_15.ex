@@ -233,15 +233,21 @@ defmodule AdventOfCode.Y2022.Day15 do
     sensor_perimeter_distances = for {s, b} <- data, into: %{}, do: {s, distance(s, b) + 1}
 
     possible_points =
-      for {{sx, sy}, d} <- sensor_perimeter_distances,
-          x <- max(0, sx - d)..min(sx + d, max_sq),
-          abs_dy = d - abs(sx - x),
-          y <- [max(0, sy - abs_dy), min(sy + abs_dy, max_sq)],
-          Enum.all?(sensor_perimeter_distances, fn {s2, d2} -> distance({x, y}, s2) >= d2 end),
-          into: MapSet.new() do
-        {x, y}
-      end
-      |> IO.inspect()
+      sensor_perimeter_distances
+      |> Task.async_stream(
+        fn {{sx, sy}, d} ->
+          for x <- max(0, sx - d)..min(sx + d, max_sq),
+              abs_dy = d - abs(sx - x),
+              y <- [max(0, sy - abs_dy), min(sy + abs_dy, max_sq)],
+              Enum.all?(sensor_perimeter_distances, fn {s2, d2} -> distance({x, y}, s2) >= d2 end),
+              into: [] do
+            {x, y}
+          end
+        end,
+        timeout: 120_000
+      )
+      |> Enum.flat_map(fn {:ok, list} -> list end)
+      |> Enum.into(MapSet.new())
 
     [{x, y}] = Enum.take(possible_points, 1)
     x * 4_000_000 + y
