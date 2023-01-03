@@ -234,24 +234,22 @@ defmodule AdventOfCode.Y2022.Day15 do
 
     possible_points =
       for {{sx, sy}, d} <- sensor_perimeter_distances,
-          dx <- 0..d,
-          x = sx + dx,
-          x in 0..max_sq,
-          dy = d - x,
-          y = sy + dy,
-          y in 0..max_sq,
-          Enum.all?(sensor_perimeter_distances, fn {s2, d2} -> distance({x, y}, s2) > d2 end) do
+          x <- max(0, sx - d)..min(sx + d, max_sq),
+          abs_dy = d - abs(sx - x),
+          y <- [max(0, sy - abs_dy), min(sy + abs_dy, max_sq)],
+          Enum.all?(sensor_perimeter_distances, fn {s2, d2} -> distance({x, y}, s2) >= d2 end),
+          into: MapSet.new() do
         {x, y}
       end
       |> IO.inspect()
 
-    [{x, y}] = possible_points
+    [{x, y}] = Enum.take(possible_points, 1)
     x * 4_000_000 + y
   end
 
   # --- </Solution Functions> ---
 
-  def distance({x0, y0}, {x1, y1}) do
+  def distance({x0, y0} = _p1, {x1, y1} = _p2) do
     abs(x0 - x1) + abs(y0 - y1)
   end
 end
