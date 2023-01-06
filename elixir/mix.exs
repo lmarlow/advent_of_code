@@ -21,6 +21,7 @@ defmodule AdventOfCode.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:nimble_parsec, "~> 1.2"},
       {:nx, github: "elixir-nx/nx", sparse: "nx"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:httpoison, "~> 1.8.0"},
