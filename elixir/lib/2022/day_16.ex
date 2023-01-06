@@ -43,13 +43,12 @@ defmodule AdventOfCode.Y2022.Day16 do
     |> Enum.map(&Parser.line/1)
     |> Enum.map(&elem(&1, 1))
     |> Enum.map(fn [valve, flow_rate | connections] ->
-      {valve,
-       struct(__MODULE__,
-         valve: String.to_atom(valve),
-         flow_rate: flow_rate,
-         connections: Enum.map(connections, &String.to_atom/1),
-         open?: flow_rate == 0
-       )}
+      struct(__MODULE__,
+        valve: String.to_atom(valve),
+        flow_rate: flow_rate,
+        connections: Enum.map(connections, &String.to_atom/1),
+        open?: flow_rate == 0
+      )
     end)
   end
 
@@ -239,32 +238,25 @@ defmodule AdventOfCode.Y2022.Day16 do
   the most pressure you can release?*
 
   """
-  def solve_1([{start_room, _} | _rest] = data) do
-    by_room = Enum.into(data, %{})
-
+  def solve_1(data) do
     graph =
-      for {valve, %{connections: connections} = room} <- data,
+      for %{valve: valve, connections: connections} = room <- data,
           conn <- connections,
           reduce: :digraph.new() do
         g ->
           v1 = :digraph.add_vertex(g, valve, room)
-          next_room = Map.get(by_room, conn)
+          next_room = Enum.find(data, &(&1.valve == conn))
           v2 = :digraph.add_vertex(g, conn, next_room)
           :digraph.add_edge(g, v1, v2)
           g
       end
 
-    # paths(
-    #   unopened_valves(Map.values(by_room)),
-    #   {start_room, 0},
-    #   graph
-    # )
-    # # |> Enum.map(&elem(&1, 1))
-    # |> Enum.map(&pressure_released(&1, by_room))
-    # |> Enum.sort(:desc)
-    # |> hd()
-
-    {by_room, graph}
+    data
+    |> unopened_valves()
+    |> stops(:AA, graph, 30)
+    |> max_released(:AA, graph)
+    |> IO.inspect()
+    |> elem(0)
   end
 
   @doc """
@@ -279,73 +271,40 @@ defmodule AdventOfCode.Y2022.Day16 do
   def unopened_valves(rooms) do
     rooms
     |> Enum.reject(& &1.open?)
-    |> Enum.sort_by(& &1.flow_rate, :desc)
-    |> Enum.map(&{&1.valve, &1.flow_rate})
+    |> Enum.map(& &1.valve)
   end
 
-  def paths(unopened, from, graph) do
-    compute_paths(
-      unopened,
-      from,
-      graph,
-      _acc = {_minutes_left = 30, _open_flow = 0, _path_flow = 0, _current_path = [], _paths = []}
-    )
-  end
+  def stops([], _from, _graph, _minutes_left), do: [[]]
+  def stops(_unopened, _from, _graph, minutes_left) when minutes_left < 1, do: [[]]
 
-  def compute_paths(
-        _unopened,
-        _from,
-        _graph,
-        {_minutes_left = 0, __open_flow, _path_flow, current_path, paths}
-      ),
-      do: [current_path | paths]
-
-  def compute_paths(
-        [],
-        {last_to_open, _flow_rate},
-        _graph,
-        {minutes_left, open_flow, _path_flow, current_path, paths}
-      ),
-      do: [
-        Enum.concat(current_path, List.duplicate({last_to_open, open_flow}, minutes_left)) | paths
-      ]
-
-  def compute_paths(
-        unopened,
-        {from_room, _},
-        graph,
-        {minutes_left, open_flow, path_flow, current_path, paths}
-      ) do
-    for {next_to_open, room_flow_rate} = this <- unopened,
-        rest = unopened -- [this],
-        reduce: paths do
-      paths ->
-        case :digraph.get_short_path(graph, from_room, next_to_open) do
-          next_leg when length(next_leg) > minutes_left ->
-            [
-              Enum.concat(current_path, List.duplicate({from_room, open_flow}, minutes_left))
-              | paths
-            ]
-
-          next_leg ->
-            travel_time = length(next_leg) - 1
-            next_leg = Enum.map()
-
-            new_flow = open_flow + room_flow_rate
-
-            compute_paths(
-              rest,
-              this,
-              graph,
-              {minutes_left - 1 - travel_time, new_flow,
-               open_flow + path_flow + travel_time * new_flow,
-               Enum.concat(current_path, next_leg), paths}
-            )
-        end
+  def stops(unopened, from, graph, minutes_left) do
+    for to <- unopened,
+        leg = :digraph.get_short_path(graph, from, to),
+        rest <- stops(List.delete(unopened, to), to, graph, minutes_left - length(leg)) do
+      [to | rest]
     end
   end
 
-  def pressure_released(path, by_room, minutes_left \\ 30, open_flow \\ 0, released \\ 0)
+  def max_released(stops, initial, graph) do
+    stops
+    |> Enum.reduce({0, []}, fn stops, {max_released, _} = acc ->
+      path =
+        [initial | stops]
+        |> Enum.chunk_every(2, 1, :discard)
+        |> Enum.flat_map(fn [from, to] -> :digraph.get_short_path(graph, from, to) end)
+        |> then(&Enum.concat(&1, [List.last(&1)]))
+
+      path_released = pressure_released(path, graph)
+
+      if path_released > max_released do
+        {path_released, path}
+      else
+        acc
+      end
+    end)
+  end
+
+  def pressure_released(path, graph, minutes_left \\ 30, open_flow \\ 0, released \\ 0)
 
   def pressure_released(_path, _, 0, _, released), do: released
 
@@ -354,27 +313,29 @@ defmodule AdventOfCode.Y2022.Day16 do
 
   def pressure_released(
         [room | [room | _] = rest],
-        by_room,
+        graph,
         minutes_left,
         open_flow,
         released
-      ),
-      do:
-        pressure_released(
-          rest,
-          by_room,
-          minutes_left - 1,
-          open_flow + Map.get(by_room, room).flow_rate,
-          released + open_flow
-        )
+      ) do
+    {_, %{flow_rate: flow_rate}} = :digraph.vertex(graph, room)
 
-  def pressure_released([_new_room | rest], by_room, minutes_left, open_flow, released),
-    do:
-      pressure_released(
-        rest,
-        by_room,
-        minutes_left - 1,
-        open_flow,
-        released + open_flow
-      )
+    pressure_released(
+      rest,
+      graph,
+      minutes_left - 1,
+      open_flow + flow_rate,
+      released + open_flow
+    )
+  end
+
+  def pressure_released([_new_room | rest], graph, minutes_left, open_flow, released) do
+    pressure_released(
+      rest,
+      graph,
+      minutes_left - 1,
+      open_flow,
+      released + open_flow
+    )
+  end
 end
