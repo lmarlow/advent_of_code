@@ -32,7 +32,7 @@ defmodule AdventOfCode.Y2022.Day16 do
     )
   end
 
-  defstruct valve: nil, flow_rate: 0, connections: [], open?: false
+  defstruct valve: nil, flow_rate: 0, connections: []
 
   @doc """
       Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
@@ -46,8 +46,7 @@ defmodule AdventOfCode.Y2022.Day16 do
       struct(__MODULE__,
         valve: String.to_atom(valve),
         flow_rate: flow_rate,
-        connections: Enum.map(connections, &String.to_atom/1),
-        open?: flow_rate == 0
+        connections: Enum.map(connections, &String.to_atom/1)
       )
     end)
   end
@@ -239,23 +238,8 @@ defmodule AdventOfCode.Y2022.Day16 do
 
   """
   def solve_1(data) do
-    graph =
-      for %{valve: valve, connections: connections} = room <- data,
-          conn <- connections,
-          reduce: :digraph.new() do
-        g ->
-          v1 = :digraph.add_vertex(g, valve, room)
-          next_room = Enum.find(data, &(&1.valve == conn))
-          v2 = :digraph.add_vertex(g, conn, next_room)
-          :digraph.add_edge(g, v1, v2)
-          g
-      end
-
     data
-    |> unopened_valves()
-    |> stops(:AA, graph, 30)
-    |> max_released(:AA, graph)
-    |> IO.inspect()
+    |> max_released(30, unopened_valves(data))
     |> elem(0)
   end
 
@@ -351,79 +335,101 @@ defmodule AdventOfCode.Y2022.Day16 do
 
   """
   def solve_2(data) do
-    {2, :not_implemented, data}
+    unopened = unopened_valves(data)
+    minutes_left = 26
+
+    # split unopened into all possible pairs of 2 of "equal" length
+    # and find the max for each pair and then the max of those
+    unopened
+    |> combinations(div(length(unopened), 2))
+    |> Task.async_stream(fn unopened1 ->
+      unopened2 = unopened -- unopened1
+      {s1, _} = max_released(data, minutes_left, unopened1)
+      {s2, _} = max_released(data, minutes_left, unopened2)
+      s1 + s2
+    end)
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.max()
   end
 
   # --- </Solution Functions> ---
 
+  def max_released(data, minutes_left, unopened) do
+    distances = distances([:AA | unopened], graph(data))
+    flows = for %{valve: k, flow_rate: v} <- data, into: %{}, do: {k, v}
+
+    unopened
+    |> stops(:AA, distances, minutes_left)
+    # |> tap(&IO.puts("Found #{length(&1)} possible paths"))
+    |> Enum.map(&{pressure_released([:AA | &1], distances, minutes_left, flows), &1})
+    # |> tap(&IO.puts("Scored #{length(&1)} paths"))
+    |> Enum.max()
+  end
+
+  def graph(data) do
+    for %{valve: valve, connections: connections} = room <- data,
+        conn <- connections,
+        reduce: :digraph.new() do
+      g ->
+        v1 = :digraph.add_vertex(g, valve, room)
+        next_room = Enum.find(data, &(&1.valve == conn))
+        v2 = :digraph.add_vertex(g, conn, next_room)
+        :digraph.add_edge(g, v1, v2)
+        g
+    end
+  end
+
+  def distances(stops, graph) do
+    for from <- stops,
+        to <- stops,
+        to != from,
+        into: %{},
+        do: {{from, to}, length(:digraph.get_short_path(graph, from, to))}
+  end
+
   def unopened_valves(rooms) do
     rooms
-    |> Enum.reject(& &1.open?)
+    |> Enum.filter(&(&1.flow_rate > 0))
     |> Enum.map(& &1.valve)
   end
 
-  def stops([], _from, _graph, _minutes_left), do: [[]]
-  def stops(_unopened, _from, _graph, minutes_left) when minutes_left < 1, do: [[]]
+  def stops([], _from, _distances, _minutes_left), do: [[]]
+  def stops(_unopened, _from, _distances, minutes_left) when minutes_left < 1, do: [[]]
 
-  def stops(unopened, from, graph, minutes_left) do
+  def stops(unopened, from, distances, minutes_left) do
     for to <- unopened,
-        leg = :digraph.get_short_path(graph, from, to),
-        rest <- stops(List.delete(unopened, to), to, graph, minutes_left - length(leg)) do
+        rest <-
+          stops(List.delete(unopened, to), to, distances, minutes_left - distances[{from, to}]) do
       [to | rest]
     end
   end
 
-  def max_released(stops, initial, graph) do
-    stops
-    |> Enum.reduce({0, []}, fn stops, {max_released, _} = acc ->
-      path =
-        [initial | stops]
-        |> Enum.chunk_every(2, 1, :discard)
-        |> Enum.flat_map(fn [from, to] -> :digraph.get_short_path(graph, from, to) end)
-        |> then(&Enum.concat(&1, [List.last(&1)]))
+  def pressure_released([start | rest], distances, minutes_left, flows) do
+    rest
+    |> Enum.reduce({0, start, minutes_left}, fn stop, {released, prev, minutes_left} ->
+      minutes_left = max(0, minutes_left - distances[{prev, stop}])
+      new_release = minutes_left * flows[stop]
 
-      path_released = pressure_released(path, graph)
-
-      if path_released > max_released do
-        {path_released, path}
-      else
-        acc
-      end
+      {released + new_release, stop, minutes_left}
     end)
+    |> elem(0)
   end
 
-  def pressure_released(path, graph, minutes_left \\ 30, open_flow \\ 0, released \\ 0)
-
-  def pressure_released(_path, _, 0, _, released), do: released
-
-  def pressure_released([], _, minutes_left, open_flow, released),
-    do: released + minutes_left * open_flow
-
-  def pressure_released(
-        [room | [room | _] = rest],
-        graph,
-        minutes_left,
-        open_flow,
-        released
-      ) do
-    {_, %{flow_rate: flow_rate}} = :digraph.vertex(graph, room)
-
-    pressure_released(
-      rest,
-      graph,
-      minutes_left - 1,
-      open_flow + flow_rate,
-      released + open_flow
-    )
+  # Taken from https://github.com/tallakt/comb/blob/be5f9df/lib/comb.ex#L40-L54
+  def combinations(enum, k) do
+    List.last(do_combinations(enum, k))
+    |> Enum.uniq()
   end
 
-  def pressure_released([_new_room | rest], graph, minutes_left, open_flow, released) do
-    pressure_released(
-      rest,
-      graph,
-      minutes_left - 1,
-      open_flow,
-      released + open_flow
-    )
+  defp do_combinations(enum, k) do
+    combinations_by_length = [[[]] | List.duplicate([], k)]
+
+    list = Enum.to_list(enum)
+
+    List.foldr(list, combinations_by_length, fn x, next ->
+      sub = :lists.droplast(next)
+      step = [[] | for(l <- sub, do: for(s <- l, do: [x | s]))]
+      :lists.zipwith(&:lists.append/2, step, next)
+    end)
   end
 end
