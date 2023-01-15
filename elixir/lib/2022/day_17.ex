@@ -565,9 +565,8 @@ defmodule AdventOfCode.Y2022.Day17 do
       total_rock_count = acc.total_rock_count + 1
       total_height = max(acc.total_height, Rock.top(blown_rock))
       cave = MapSet.union(acc.cave, Rock.positions(blown_rock))
-      key = {rock.name, elem(blown_rock.origin, 0), length(cycle_wind)}
+      key = {blown_rock.name, elem(blown_rock.origin, 0), length(cycle_wind)}
 
-      {total_rock_count, height_offset, cycles_seen} =
         case acc.cycles_seen[key] do
           {last_rock_count, last_height} ->
             rocks_left = acc.final_rock_count - total_rock_count
@@ -577,22 +576,28 @@ defmodule AdventOfCode.Y2022.Day17 do
             total_rock_count = total_rock_count + cycles_to_get_close * cycle_size
             height_offset = cycles_to_get_close * cycle_height
 
-            {total_rock_count, height_offset, %{}}
+            %{
+              acc
+              | total_rock_count: total_rock_count,
+                total_height: total_height,
+                height_offset: height_offset,
+                cycle_wind: cycle_wind,
+                cycles_seen: %{},
+                cave: cave
+            }
 
           nil ->
-            {total_rock_count, acc.height_offset,
-             Map.put(acc.cycles_seen, key, {total_rock_count, total_height})}
-        end
+            cycles_seen = Map.put(acc.cycles_seen, key, {total_rock_count, total_height})
 
-      %{
-        acc
-        | total_rock_count: total_rock_count,
-          total_height: total_height,
-          height_offset: height_offset,
-          cycle_wind: cycle_wind,
-          cycles_seen: cycles_seen,
-          cave: cave
-      }
+            %{
+              acc
+              | total_rock_count: total_rock_count,
+                total_height: total_height,
+                cycle_wind: cycle_wind,
+                cycles_seen: cycles_seen,
+                cave: cave
+            }
+        end
     else
       add_rock(moved_rock, %{acc | cycle_wind: cycle_wind})
     end
