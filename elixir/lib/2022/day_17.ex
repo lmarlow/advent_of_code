@@ -13,6 +13,20 @@ defmodule AdventOfCode.Y2022.Day17 do
 
     defstruct name: nil, origin: {0, 0}, width: 0, height: 0, shape: []
 
+    def new(name, shape) do
+      {xs, ys} = Enum.unzip(shape)
+      {xmin, xmax} = Enum.min_max(xs)
+      {ymin, ymax} = Enum.min_max(ys)
+
+      %__MODULE__{
+        name: name,
+        origin: {0, 0},
+        width: 1 + xmax - xmin,
+        height: 1 + ymax - ymin,
+        shape: shape
+      }
+    end
+
     def move(%__MODULE__{origin: {x0, y0}} = rock, {dx, dy}) do
       %{rock | origin: {x0 + dx, y0 + dy}}
     end
@@ -31,59 +45,16 @@ defmodule AdventOfCode.Y2022.Day17 do
       MapSet.new(shape, fn {px, py} -> {px + x0, py + y0} end)
     end
 
-    def in_bounds?(%__MODULE__{origin: {x0, _}, width: w}, left..right//_) do
-      x0 >= left and x0 + (w - 1) <= right
+    def out_of_bounds?(%__MODULE__{origin: {x0, y0}, width: w}, left..right//_) do
+      x0 < left or x0 + (w - 1) > right or y0 < 0
     end
+
+    def in_bounds?(%__MODULE__{} = rock, _.._//_ = range), do: not out_of_bounds?(rock, range)
 
     def top(%__MODULE__{origin: {_, y0}, height: h}), do: y0 + h
   end
 
   @cave_width 0..6
-
-  # hline
-  #   ####
-  @hline %{name: :hline, width: 4, height: 1, shape: Enum.map(0..3, &{&1, 0})}
-
-  # cross
-  #   .#.
-  #   ###
-  #   .#.
-  @cross %{
-    name: :cross,
-    width: 3,
-    height: 3,
-    shape: [{1, 0}, {0, 1}, {1, 1}, {2, 1}, {1, 2}]
-  }
-
-  # leg
-  #   ..#
-  #   ..#
-  #   ###
-  @leg %{
-    name: :leg,
-    width: 3,
-    height: 3,
-    shape: [{0, 0}, {1, 0}, {2, 0}, {2, 1}, {2, 2}]
-  }
-
-  # vline
-  #   #
-  #   #
-  #   #
-  #   #
-  @vline %{name: :vline, width: 1, height: 4, shape: Enum.map(0..3, &{0, &1})}
-
-  # square
-  #   ##
-  #   ##
-  @square %{
-    name: :square,
-    width: 2,
-    height: 2,
-    shape: [{0, 0}, {1, 0}, {0, 1}, {1, 1}]
-  }
-
-  @rock_order [@hline, @cross, @leg, @vline, @square]
 
   @doc ~S"""
   Sample data:
@@ -481,45 +452,149 @@ defmodule AdventOfCode.Y2022.Day17 do
   stopped falling?*
 
   """
-  def solve_1(movements) do
-    cave = MapSet.new(@cave_width, &{&1, -1})
-
-    @rock_order
-    |> Enum.map(&struct!(Rock, &1))
-    |> Stream.cycle()
-    |> Stream.take(2022)
-    |> Enum.reduce({{movements, movements}, 0, cave}, fn rock,
-                                                         {{_movements, _all_movements} =
-                                                            movement_acc, top, cave} ->
-      add_rock(Rock.move(rock, {2, top + 3}), movement_acc, top, cave)
-      |> tap(fn {_, _, c} -> draw(c) end)
-    end)
-    |> elem(1)
+  def solve_1(data) do
+    drop_rocks(data, 2022)
   end
 
   @doc """
   # Part 2
+
+  The elephants are not impressed by your simulation. They demand to know
+  how tall the tower will be after *`1000000000000`* rocks have stopped!
+  Only then will they feel confident enough to proceed through the cave.
+
+  In the example above, the tower would be *`1514285714288`* units tall!
+
+  *How tall will the tower be after `1_000_000_000_000` rocks have stopped?*
   """
   def solve_2(data) do
-    {2, :not_implemented, data}
+    drop_rocks(data, 1_000_000_000_000)
   end
 
   # --- </Solution Functions> ---
 
-  defp add_rock(rock, {[], all_wind}, top, cave),
-    do: add_rock(rock, {all_wind, all_wind}, top, cave)
+  def rocks() do
+    [
+      # hline
+      #   ####
+      Rock.new(:hline, Enum.map(0..3, &{&1, 0})),
 
-  defp add_rock(rock, {[dir | wind], all_wind}, top, cave) do
-    draw(cave, rock)
-    moved_rock = Rock.move(rock, dir)
-    blown_rock = if Rock.blocked?(moved_rock, @cave_width, cave), do: rock, else: moved_rock
-    down_rock = Rock.move(blown_rock, :down)
+      # cross
+      #   .#.
+      #   ###
+      #   .#.
+      Rock.new(
+        :cross,
+        [{1, 0}, {0, 1}, {1, 1}, {2, 1}, {1, 2}]
+      ),
 
-    if Rock.blocked?(down_rock, @cave_width, cave) do
-      {{wind, all_wind}, max(top, Rock.top(blown_rock)),
-       MapSet.union(Rock.positions(blown_rock), cave)}
+      # leg
+      #   ..#
+      #   ..#
+      #   ###
+      Rock.new(
+        :leg,
+        [{0, 0}, {1, 0}, {2, 0}, {2, 1}, {2, 2}]
+      ),
+
+      # vline
+      #   #
+      #   #
+      #   #
+      #   #
+      Rock.new(
+        :vline,
+        Enum.map(0..3, &{0, &1})
+      ),
+
+      # square
+      #   ##
+      #   ##
+      Rock.new(
+        :square,
+        [{0, 0}, {1, 0}, {0, 1}, {1, 1}]
+      )
+    ]
+  end
+
+  def drop_rocks(wind, number) do
+    initial_acc = %{
+      final_rock_count: number,
+      total_rock_count: 0,
+      total_height: 0,
+      cycle_wind: wind,
+      cycles_seen: %{},
+      original_wind: wind,
+      height_offset: 0,
+      cave: MapSet.new()
+    }
+
+    rocks()
+    |> Stream.cycle()
+    |> Enum.reduce_while(
+      initial_acc,
+      fn
+        _rock, %{final_rock_count: same, total_rock_count: same} = acc ->
+          {:halt, acc.total_height + acc.height_offset}
+
+        rock, %{total_rock_count: total_rock_count} = acc when total_rock_count < number ->
+          rock = Rock.move(rock, {2, acc.total_height + 3})
+
+          {:cont, add_rock(rock, acc)}
+      end
+    )
+  end
+
+  defp add_rock(rock, %{cycle_wind: [], original_wind: original_wind} = acc) do
+    add_rock(rock, %{acc | cycle_wind: original_wind})
+  end
+
+  defp add_rock(rock, %{cycle_wind: [dir | cycle_wind]} = acc) do
+    blown_rock = Rock.move(rock, dir)
+
+    blown_rock =
+      if Rock.blocked?(blown_rock, @cave_width, acc.cave) do
+        rock
+      else
+        blown_rock
+      end
+
+    moved_rock = Rock.move(blown_rock, :down)
+
+    if Rock.blocked?(moved_rock, @cave_width, acc.cave) do
+      total_rock_count = acc.total_rock_count + 1
+      total_height = max(acc.total_height, Rock.top(blown_rock))
+      cave = MapSet.union(acc.cave, Rock.positions(blown_rock))
+      key = {rock.name, elem(blown_rock.origin, 0), length(cycle_wind)}
+
+      {total_rock_count, height_offset, cycles_seen} =
+        case acc.cycles_seen[key] do
+          {last_rock_count, last_height} ->
+            rocks_left = acc.final_rock_count - total_rock_count
+            cycle_size = total_rock_count - last_rock_count
+            cycle_height = total_height - last_height
+            cycles_to_get_close = div(rocks_left, cycle_size)
+            total_rock_count = total_rock_count + cycles_to_get_close * cycle_size
+            height_offset = cycles_to_get_close * cycle_height
+
+            {total_rock_count, height_offset, %{}}
+
+          nil ->
+            {total_rock_count, acc.height_offset,
+             Map.put(acc.cycles_seen, key, {total_rock_count, total_height})}
+        end
+
+      %{
+        acc
+        | total_rock_count: total_rock_count,
+          total_height: total_height,
+          height_offset: height_offset,
+          cycle_wind: cycle_wind,
+          cycles_seen: cycles_seen,
+          cave: cave
+      }
     else
-      add_rock(down_rock, {wind, all_wind}, top, cave)
+      add_rock(moved_rock, %{acc | cycle_wind: cycle_wind})
     end
   end
 
