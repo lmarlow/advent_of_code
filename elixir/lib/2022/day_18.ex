@@ -18,9 +18,22 @@ defmodule AdventOfCode.Y2022.Day18 do
 
   def run(data, part) when is_list(data), do: data |> solve(part)
 
+  import NimbleParsec
+
+  defparsecp(
+    :xyz,
+    integer(min: 1)
+    |> ignore(string(","))
+    |> integer(min: 1)
+    |> ignore(string(","))
+    |> integer(min: 1)
+  )
+
   def parse(data) do
     data
     |> String.split("\n", trim: true)
+    |> Enum.map(&xyz/1)
+    |> Enum.map(&elem(&1, 1))
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -81,7 +94,18 @@ defmodule AdventOfCode.Y2022.Day18 do
 
   """
   def solve_1(data) do
-    {1, :not_implemented}
+    net = MapSet.new(data)
+
+    for [x, y, z] <- data,
+        dx <- -1..1,
+        dy <- -1..1,
+        dz <- -1..1,
+        Enum.count([dx, dy, dz], &(&1 == 0)) == 2,
+        neighbor = [x + dx, y + dy, z + dz],
+        neighbor not in net,
+        reduce: 0 do
+      acc -> acc + 1
+    end
   end
 
   @doc """
