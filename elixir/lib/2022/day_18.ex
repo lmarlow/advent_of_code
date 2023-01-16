@@ -112,8 +112,80 @@ defmodule AdventOfCode.Y2022.Day18 do
   # Part 2
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    cubes = MapSet.new(data)
+    net = :digraph.new()
+
+    neighbors = [[-1, 0, 0], [0, -1, 0], [0, 0, -1], [0, 0, 1], [0, 1, 0], [1, 0, 0]]
+
+    {bounding_neighbors, point_to_vertex} =
+      for [x, y, z] = cube <- cubes,
+          [dx, dy, dz] <- neighbors,
+          neighbor = [x + dx, y + dy, z + dz],
+          neighbor not in cubes,
+          reduce: {MapSet.new(), %{}} do
+        {bounding_neighbors, point_to_vertex} ->
+          point_to_vertex =
+            point_to_vertex
+            |> Map.put_new_lazy(cube, fn -> :digraph.add_vertex(net, cube, cube) end)
+            |> Map.put_new_lazy(neighbor, fn -> :digraph.add_vertex(net, neighbor, neighbor) end)
+
+          {MapSet.put(bounding_neighbors, neighbor), point_to_vertex}
+      end
+
+    {xmin, xmax} =
+      Enum.min_max(Enum.map(bounding_neighbors, fn [x, _, _] -> x end))
+      |> IO.inspect(label: :xbounds)
+
+    {ymin, ymax} =
+      Enum.min_max(Enum.map(bounding_neighbors, fn [_, y, _] -> y end))
+      |> IO.inspect(label: :ybounds)
+
+    {zmin, zmax} =
+      Enum.min_max(Enum.map(bounding_neighbors, fn [_, _, z] -> z end))
+      |> IO.inspect(label: :zbounds)
+
+    point_to_vertex =
+      for x <- xmin..xmax,
+          y <- ymin..ymax,
+          z <- zmin..zmax,
+          point = [x, y, z],
+          [dx, dy, dz] <- neighbors,
+          neighbor = [x + dx, y + dy, z + dz],
+          neighbor not in cubes,
+          reduce: point_to_vertex do
+        point_to_vertex ->
+          point_to_vertex =
+            point_to_vertex
+            |> Map.put_new_lazy(point, fn -> :digraph.add_vertex(net, point, point) end)
+            |> Map.put_new_lazy(neighbor, fn -> :digraph.add_vertex(net, neighbor, neighbor) end)
+
+          point_vertex = Map.get(point_to_vertex, point)
+          neighbor_vertex = Map.get(point_to_vertex, neighbor)
+
+          :digraph.add_edge(net, point_vertex, neighbor_vertex)
+          point_to_vertex
+      end
+
+    outside_point = Enum.min_by(bounding_neighbors, &distance(&1, [xmin, ymin, zmin]))
+    outside_vertex = Map.get(point_to_vertex, outside_point)
+
+    for cube <- cubes,
+        cube_vertex = Map.get(point_to_vertex, cube),
+        reduce: 0 do
+      acc ->
+        acc +
+          Enum.count(:digraph.out_neighbours(net, cube_vertex), fn neighbor_vertex ->
+            case :digraph.get_short_path(net, neighbor_vertex, outside_vertex) do
+              false -> false
+              _ -> true
+            end
+          end)
+    end
   end
 
   # --- </Solution Functions> ---
+
+  def distance([x0, y0, z0], [x1, y1, z1]) do
+    abs(x0 - x1) + abs(y0 - y1) + abs(z0 - z1)
+  end
 end
