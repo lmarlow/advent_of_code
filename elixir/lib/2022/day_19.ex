@@ -18,9 +18,35 @@ defmodule AdventOfCode.Y2022.Day19 do
 
   def run(data, part) when is_list(data), do: data |> solve(part)
 
+  import NimbleParsec
+
+  defparsec(:parse_blueprint, times(eventually(integer(min: 1, max: 2)), 7))
+
+  defstruct blueprint: 0,
+            ore_cost: %{ore: 0},
+            clay_cost: %{ore: 0},
+            obsidian_cost: %{ore: 0, clay: 0},
+            geode_cost: %{ore: 0, obsidian: 0},
+            minute: 0,
+            inventory: %{ore: 0, clay: 0, obsidian: 0, geode: 0},
+            robots: %{ore: 1, clay: 0, obsidian: 0, geode: 0}
+
+  def new([bp, ore_ore, clay_ore, obsidan_ore, obsidian_clay, geode_ore, geode_obsidian]) do
+    %__MODULE__{
+      blueprint: bp,
+      ore_cost: %{ore: ore_ore},
+      clay_cost: %{ore: clay_ore},
+      obsidian_cost: %{ore: obsidan_ore, clay: obsidian_clay},
+      geode_cost: %{ore: geode_ore, obsidian: geode_obsidian}
+    }
+  end
+
   def parse(data) do
     data
     |> String.split("\n", trim: true)
+    |> Enum.map(&parse_blueprint/1)
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.map(&new/1)
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -234,8 +260,11 @@ defmodule AdventOfCode.Y2022.Day19 do
   the quality level of all of the blueprints in your list?*
 
   """
-  def solve_1(data) do
-    {1, :not_implemented, data}
+  def solve_1(blueprints) do
+    blueprints
+    |> Enum.map(&maximize_geodes(&1, 24))
+    |> Enum.map(&quality_level/1)
+    |> Enum.sum()
   end
 
   @doc """
@@ -246,4 +275,11 @@ defmodule AdventOfCode.Y2022.Day19 do
   end
 
   # --- </Solution Functions> ---
+
+  def quality_level(%__MODULE__{blueprint: id, inventory: %{geode: geode_number}}),
+    do: id * geode_number
+
+  def maximize_geodes(%__MODULE__{} = bp, minutes_left) do
+    bp
+  end
 end
