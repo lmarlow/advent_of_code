@@ -29,13 +29,13 @@ defmodule AdventOfCode.Y2022.Day19 do
 
   defstruct blueprint: 0,
             minute: 0,
+            minutes_left: 0,
             build_order: [],
             costs: %{
               ore: {0, 0, 0, 0},
               clay: {0, 0, 0, 0},
               obsidian: {0, 0, 0, 0},
-              geode: {0, 0, 0, 0},
-              skip: {0, 0, 0, 0}
+              geode: {0, 0, 0, 0}
             },
             ores: {0, 0, 0, 0},
             robots: {0, 0, 0, 1},
@@ -48,8 +48,7 @@ defmodule AdventOfCode.Y2022.Day19 do
         ore: {0, 0, 0, ore_ore},
         clay: {0, 0, 0, clay_ore},
         obsidian: {0, 0, obsidian_clay, obsidan_ore},
-        geode: {0, geode_obsidian, 0, geode_ore},
-        skip: {0, 0, 0, 0}
+        geode: {0, geode_obsidian, 0, geode_ore}
       },
       max_robots:
         {1000, geode_obsidian, obsidian_clay,
@@ -282,7 +281,7 @@ defmodule AdventOfCode.Y2022.Day19 do
     |> Enum.map(&elem(&1, 1))
     # |> IO.inspect()
     |> Enum.map(&quality_level/1)
-    # |> IO.inspect()
+    # |> IO.inspect(charlists: :as_lists)
     |> Enum.sum()
   end
 
@@ -520,83 +519,97 @@ defmodule AdventOfCode.Y2022.Day19 do
 
   # --- </Solution Functions> ---
 
-  def quality_level(%__MODULE__{blueprint: id, ores: ores}),
-    do: id * elem(ores, @geode_index)
-
-  def maximize_geodes(bp, _minutes_left = 0),
-    do: %{bp | build_order: Enum.reverse(bp.build_order)}
-
-  def maximize_geodes(%__MODULE__{} = bp, minutes_left) do
-    for robot_to_build <- robot_build_options(bp, minutes_left), reduce: bp do
-      %{ores: {max_geodes, _, _, _}} = acc ->
-        new_bp =
-          bp
-          |> then(&%{&1 | minute: &1.minute + 1})
-          |> spend(robot_to_build)
-          |> collect_ore(bp.robots)
-
-        if upper_bound(new_bp, minutes_left - 1) < max_geodes do
-          acc
-        else
-          new_bp
-          # |> then(
-          #   &%{&1 | build_order: [{&1.minute, robot_to_build, &1.ores, &1.robots} | &1.build_order]}
-          # )
-          |> maximize_geodes(minutes_left - 1)
-          |> then(fn
-            %{ores: {new_geodes, _, _, _}} = new_bp when new_geodes > max_geodes -> new_bp
-            _ -> acc
-          end)
-        end
-    end
-  end
-
   defguardp can_afford?(costs, ores)
-            when elem(costs, 0) <= elem(ores, 0) and
-                   elem(costs, 1) <= elem(ores, 1) and
+            when is_tuple(costs) and is_tuple(ores) and tuple_size(costs) == 4 and
+                   tuple_size(ores) == 4 and elem(costs, 1) <= elem(ores, 1) and
                    elem(costs, 2) <= elem(ores, 2) and
                    elem(costs, 3) <= elem(ores, 3)
 
-  for {[robot | _] = robot_options, min_time_left} <-
-        Enum.with_index([[:geode], [:obsidian], [:clay, :ore, :skip], [:ore, :skip]], 1) do
-    type_index = min_time_left - 1
+  def quality_level(%__MODULE__{blueprint: id, ores: ores}),
+    do: id * elem(ores, @geode_index)
 
-    def robot_build_options(
-          %{
-            costs: %{unquote(robot) => robot_cost} = costs,
-            ores: ores,
-            robots: robots,
-            max_robots: max_robots
-          },
-          minutes_left
-        )
-        when can_afford?(robot_cost, ores) and
-               minutes_left > unquote(min_time_left) and
-               elem(robots, unquote(type_index)) < elem(max_robots, unquote(type_index)) do
-      unquote(robot_options)
-      |> Enum.filter(&can_afford?(costs[&1], ores))
+  def maximize_geodes(%__MODULE__{} = bp, minutes_left),
+    do: maximize_geodes(%{bp | minutes_left: minutes_left})
+
+  def maximize_geodes(%{minutes_left: 0} = bp),
+    do: bp
+
+  def maximize_geodes(%__MODULE__{} = bp) do
+    for robot_to_build <- robot_build_options(bp),
+        robot_to_build_index = type_index(robot_to_build),
+        robot_to_build_costs = bp.costs[robot_to_build],
+        reduce: bp do
+      %{ores: {best_geodes, _, _, _}} = best_bp ->
+        bp
+        |> turn(robot_to_build, robot_to_build_index, robot_to_build_costs)
+        |> Stream.iterate(&turn(&1, robot_to_build, robot_to_build_index, robot_to_build_costs))
+        |> Enum.find(fn
+          %{minutes_left: 0} -> true
+          %{robots: latest_robots} -> not (latest_robots == bp.robots)
+        end)
+        |> maximize_geodes()
+        |> then(fn
+          %{ores: {new_geodes, _, _, _}} = new_bp when new_geodes > best_geodes ->
+            new_bp
+
+          _ ->
+            best_bp
+        end)
     end
   end
 
-  def robot_build_options(_, _), do: [:skip]
+  defguardp could_build?(costs, robots)
+            when (elem(costs, 1) == 0 or elem(robots, 1) > 0) and
+                   (elem(costs, 2) == 0 or elem(robots, 2) > 0) and
+                   (elem(costs, 3) == 0 or elem(robots, 3) > 0)
 
-  # defguardp can_afford?({c1, c2, c3, c4}, {o1, o2, o3, o4})
-  #           when c1 <= o1 and c2 <= o2 and c3 <= o3 and c4 <= o4
+  defguardp should_build?(robot_index, robots, max_robots)
+            when robot_index == @geode_index or
+                   elem(robots, robot_index) < elem(max_robots, robot_index)
 
-  defp spend(%__MODULE__{} = bp, :skip), do: bp
+  defguardp enough_time?(robot_index, minutes_left)
+            when (robot_index == @obsidian_index and minutes_left > 2) or
+                   (robot_index == @clay_index and minutes_left > 3) or
+                   minutes_left > 1
 
-  defp spend(%__MODULE__{costs: robot_costs, ores: {geodes, obsidians, clays, ores}} = bp, robot) do
-    type_index = type_index(robot)
-    {_geode_cost, obsidian_cost, clay_cost, ore_cost} = robot_costs[robot]
+  defp turn(bp, robot_to_build, robot_to_build_index, robot_to_build_costs) do
+    bp
+    |> build(robot_to_build_index, robot_to_build_costs)
+    |> collect(bp.robots)
+    |> then(&%{&1 | minute: &1.minute + 1, minutes_left: &1.minutes_left - 1})
+    |> record_build(robot_to_build, bp.robots)
+  end
+
+  def robot_build_options(%{
+        minutes_left: minutes_left,
+        costs: costs,
+        robots: robots,
+        max_robots: max_robots
+      }) do
+    for robot <- ~w[geode obsidian clay ore]a,
+        robot_index = type_index(robot),
+        # enough_time?(robot_index, minutes_left),
+        could_build?(costs[robot], robots),
+        should_build?(robot_index, robots, max_robots) do
+      robot
+    end
+  end
+
+  defp build(%__MODULE__{ores: resources} = bp, robot_index, costs)
+       when can_afford?(costs, resources) do
+    {_geode_cost, obsidian_cost, clay_cost, ore_cost} = costs
+    {geodes, obsidians, clays, ores} = resources
 
     %{
       bp
       | ores: {geodes, obsidians - obsidian_cost, clays - clay_cost, ores - ore_cost},
-        robots: put_elem(bp.robots, type_index, 1 + elem(bp.robots, type_index))
+        robots: put_elem(bp.robots, robot_index, 1 + elem(bp.robots, robot_index))
     }
   end
 
-  defp collect_ore(
+  defp build(bp, _, _), do: bp
+
+  defp collect(
          %__MODULE__{ores: {geodes, obsidians, clays, ores}} = bp,
          {geode_bots, obsidian_bots, clay_bots, ore_bots}
        ) do
@@ -606,46 +619,16 @@ defmodule AdventOfCode.Y2022.Day19 do
     }
   end
 
-  defp max_additional(0, _elapsed), do: 0
-
-  defp max_additional(time_left, elapsed) when elapsed < 7,
-    do: max_additional(time_left - (7 - elapsed), 7)
-
-  for {time_left, max_possible} <-
-        Enum.take(
-          Stream.unfold({1, 1}, fn {time_left, sum} ->
-            {{time_left, sum}, {time_left + 1, sum + time_left + 1}}
-          end),
-          32
-        ) do
-    defp max_additional(unquote(time_left), _elapsed), do: unquote(max_possible)
+  defp record_build(%{build_order: build_order, robots: same_robots} = bp, _robot, same_robots) do
+    %{bp | build_order: [{bp.minute, :skip, bp.ores, bp.robots} | build_order]}
   end
 
-  defp upper_bound(
-         %{minute: elapsed, ores: {current, _, _, _}, robots: {bots, _, _, _}},
-         minutes_left
-       ) do
-    current + bots * minutes_left + max_additional(minutes_left, elapsed)
+  defp record_build(%{build_order: build_order} = bp, robot, _initial_robots) do
+    %{bp | build_order: [{bp.minute, robot, bp.ores, bp.robots} | build_order]}
   end
 
   defp type_index(:geode), do: @geode_index
   defp type_index(:obsidian), do: @obsidian_index
   defp type_index(:clay), do: @clay_index
   defp type_index(:ore), do: @ore_index
-
-  # defp enough_time?(
-  #       %__MODULE__{
-  #         robot_costs: %{
-  #           geode: %{ore: geo_ore_cost, obsidian: geo_obs_cost},
-  #           obsidian: %{ore: obs_ore_cost, clay: obs_clay_cost}
-  #           clay: %{ore: clay_ore_cost}
-  #         },
-  #         robots: %{geode: geode_bots, obsidian: obs_bots, clay: clay_bots},
-  #         inventory: %{obsidian: obs, ore: ore, clay: clay}
-  #       } = bp,
-  #        build_counts,
-  #        minutes_left
-  #      ) do
-  #   :ok
-  # end
 end
