@@ -230,35 +230,21 @@ defmodule AdventOfCode.Y2022.Day21 do
 
   """
   def solve_1(data) do
-    data
-    |> Stream.iterate(fn monkeys ->
-      Enum.reduce(monkeys, monkeys, fn
-        {_name, number}, acc when is_integer(number) ->
-          acc
-
-        {name, {left, op, right}}, acc ->
-          case acc do
-            %{^left => lval, ^right => rval} when is_integer(lval) and is_integer(rval) ->
-              val =
-                case op do
-                  "+" -> lval + rval
-                  "-" -> lval - rval
-                  "*" -> lval * rval
-                  "/" -> div(lval, rval)
-                end
-
-              Map.replace!(acc, name, val)
-
-            _ ->
-              acc
-          end
-      end)
-    end)
-    |> Enum.reduce_while(:keep_going, fn
-      %{"root" => val}, _ when is_integer(val) -> {:halt, val}
-      map, _ -> {:cont, map}
-    end)
+    dfs("root", data)
   end
+
+  defp dfs(monkey, monkey_map) when is_binary(monkey), do: dfs(monkey_map[monkey], monkey_map)
+
+  defp dfs(value, _monkey_map) when is_integer(value), do: value
+
+  defp dfs({left, op, right}, monkey_map) do
+    eval(dfs(left, monkey_map), op, dfs(right, monkey_map))
+  end
+
+  defp eval(left, "+", right), do: left + right
+  defp eval(left, "-", right), do: left - right
+  defp eval(left, "*", right), do: left * right
+  defp eval(left, "/", right), do: div(left, right)
 
   @doc """
   # Part 2
