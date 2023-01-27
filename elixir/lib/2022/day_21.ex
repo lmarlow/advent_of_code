@@ -47,113 +47,6 @@ defmodule AdventOfCode.Y2022.Day21 do
     |> Enum.into(%{})
   end
 
-  defmodule Monkey do
-    use GenServer, restart: :transient
-
-    defstruct [:registry_name, :name, :left_name, :right_name, :op, :op_fn, :args, :value]
-
-    def yell(pid) when is_pid(pid) do
-      GenServer.cast(pid, :yell)
-    end
-
-    @impl true
-    def init([registry_name, name, {left_name, operator, right_name}]) do
-      {:ok, _} = Registry.register(registry_name, left_name, :left)
-      {:ok, _} = Registry.register(registry_name, right_name, :right)
-
-      op_fn =
-        case operator do
-          "+" -> &Kernel.+/2
-          "-" -> &Kernel.-/2
-          "*" -> &Kernel.*/2
-          "/" -> &Kernel.div/2
-          "=" -> &Kernel.==/2
-        end
-
-      {:ok,
-       %__MODULE__{
-         registry_name: registry_name,
-         name: name,
-         left_name: left_name,
-         right_name: right_name,
-         args: [nil, nil],
-         op_fn: op_fn,
-         op: operator
-       }}
-    end
-
-    @impl true
-    def init([registry_name, start_yelling_key, name, value]) do
-      {:ok, _} = Registry.register(registry_name, start_yelling_key, value)
-
-      {:ok, %__MODULE__{registry_name: registry_name, name: name, value: value}}
-    end
-
-    @impl true
-    def handle_info(
-          {left_name, lvalue},
-          %__MODULE__{left_name: left_name, args: [_, right_arg]} = state
-        ) do
-      state = %{state | args: [lvalue, right_arg]}
-
-      {:noreply, state, {:continue, :evaluate}}
-    end
-
-    @impl true
-    def handle_info(
-          {right_name, rvalue},
-          %__MODULE__{right_name: right_name, args: [left_arg, _]} = state
-        ) do
-      state = %{state | args: [left_arg, rvalue]}
-
-      {:noreply, state, {:continue, :evaluate}}
-    end
-
-    @impl true
-    def handle_info(other, state) do
-      IO.inspect(other, label: state.name)
-      {:noreply, state}
-    end
-
-    @impl true
-    def handle_continue(
-          :evaluate,
-          %__MODULE__{args: [left_arg, right_arg] = args} = state
-        )
-        when is_integer(left_arg) and is_integer(right_arg) do
-      value = apply(state.op_fn, args)
-
-      # IO.puts(
-      #   ~s[#{state.name} evaluated #{state.left_name}:#{left_arg} #{state.op} #{state.right_name}:#{right_arg} = #{value}]
-      # )
-
-      yell(self())
-
-      {:noreply, %{state | value: value}}
-    end
-
-    @impl true
-    def handle_continue(:evaluate, state), do: {:noreply, state}
-
-    @impl true
-    def handle_cast(
-          :yell,
-          %__MODULE__{registry_name: registry_name, name: name, value: value} = state
-        )
-        when not is_nil(value) do
-      # IO.puts(~s[#{name} yells "#{value}"])
-
-      Registry.dispatch(registry_name, name, fn entries ->
-        for {pid, _} <- entries, do: send(pid, {name, value})
-      end)
-
-      {:noreply, state}
-    end
-
-    @impl true
-    def handle_cast(:yell, state), do: {:noreply, state}
-  end
-
   def solve(data, 1), do: solve_1(data)
   def solve(data, 2), do: solve_2(data)
 
@@ -233,7 +126,8 @@ defmodule AdventOfCode.Y2022.Day21 do
     dfs("root", data)
   end
 
-  defp dfs(monkey, monkey_map) when is_binary(monkey), do: dfs(monkey_map[monkey], monkey_map)
+  defp dfs(monkey, monkey_map) when is_binary(monkey),
+    do: dfs(monkey_map[monkey], monkey_map)
 
   defp dfs(value, _monkey_map) when is_integer(value), do: value
 
@@ -271,56 +165,59 @@ defmodule AdventOfCode.Y2022.Day21 do
   *What number do you yell to pass `root`'s equality test?*
   """
   def solve_2(data) do
-    registry_name = __MODULE__.Part2
-    start_yelling_key = :start_yelling
+    {root_left, _, root_right} = data["root"]
 
-    {:ok, _} =
-      Registry.start_link(
-        keys: :duplicate,
-        name: registry_name,
-        partitions: System.schedulers_online()
-      )
+    {human_side, needed_value} =
+      if dfs(root_left, data) != dfs(root_left, Map.update!(data, "humn", &(&1 * &1))),
+        do: {root_left, dfs(root_right, data)},
+        else: {root_right, dfs(root_left, data)}
 
-    {:ok, _} = Registry.register(registry_name, "root", [])
+    human_path =
+      Stream.unfold({"humn", data}, fn
+        {^human_side, _} ->
+          nil
 
-    data
-    |> Enum.each(fn
-      {"humn", _} ->
-        :ignore
+        {node, tree_data} ->
+          parent =
+            Enum.find(tree_data, fn
+              {_, {^node, _, _}} -> true
+              {_, {_, _, ^node}} -> true
+              _ -> false
+            end)
+            |> elem(0)
 
-      {"root" = name, {left, _, right}} ->
-        GenServer.start_link(Monkey, [registry_name, name, {left, "=", right}])
-
-      {name, {_, _, _} = equation} ->
-        GenServer.start_link(Monkey, [registry_name, name, equation])
-
-      {name, value} ->
-        GenServer.start_link(Monkey, [registry_name, start_yelling_key, name, value])
-    end)
-
-    Registry.dispatch(registry_name, start_yelling_key, fn entries ->
-      for {pid, _} <- entries, do: Monkey.yell(pid)
-    end)
-
-    start_value =
-      if map_size(data) > 20 do
-        3_099_532_691_300
-      else
-        1
-      end
-
-    Stream.iterate(start_value, &(&1 + 1))
-    # |> Stream.map_every(10_000, &IO.inspect/1)
-    |> Enum.find(fn human_value ->
-      Registry.dispatch(registry_name, "humn", fn entries ->
-        for {pid, _} <- entries,
-            do: send(pid, {"humn", human_value})
+          {node, {parent, tree_data}}
       end)
+      |> Enum.into(MapSet.new())
 
-      receive do
-        {"root", value} -> value
-      end
-    end)
+    data = Map.delete(data, "humn")
+
+    inverse =
+      data
+      |> Enum.reduce(%{}, fn
+        {name, value}, acc when is_integer(value) ->
+          Map.put(acc, name, value)
+
+        {name, {left, op, right}}, acc ->
+          left = if is_integer(data[left]), do: data[left], else: left
+          right = if is_integer(data[right]), do: data[right], else: right
+
+          new_instructions =
+            case op do
+              "+" -> %{left => {name, "-", right}, right => {name, "-", left}}
+              "-" -> %{left => {name, "+", right}, right => {left, "-", name}}
+              "*" -> %{left => {name, "/", right}, right => {name, "/", left}}
+              "/" -> %{left => {name, "*", right}, right => {left, "/", name}}
+            end
+            |> Map.filter(fn {k, _} -> is_binary(k) end)
+
+          Map.merge(acc, new_instructions)
+      end)
+      |> Map.filter(fn {k, _} -> k in human_path end)
+      |> Map.put(root_left, needed_value)
+      |> Map.put(root_right, needed_value)
+
+    dfs("humn", Map.merge(data, inverse))
   end
 
   # --- </Solution Functions> ---
