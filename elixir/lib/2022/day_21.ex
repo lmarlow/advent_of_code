@@ -230,34 +230,34 @@ defmodule AdventOfCode.Y2022.Day21 do
 
   """
   def solve_1(data) do
-    registry_name = __MODULE__.Part1
-    start_yelling_key = :start_yelling
-
-    {:ok, _} =
-      Registry.start_link(
-        keys: :duplicate,
-        name: registry_name,
-        partitions: System.schedulers_online()
-      )
-
-    {:ok, _} = Registry.register(registry_name, "root", [])
-
     data
-    |> Enum.each(fn
-      {name, {_, _, _} = equation} ->
-        GenServer.start_link(Monkey, [registry_name, name, equation])
+    |> Stream.iterate(fn monkeys ->
+      Enum.reduce(monkeys, monkeys, fn
+        {_name, number}, acc when is_integer(number) ->
+          acc
 
-      {name, value} ->
-        GenServer.start_link(Monkey, [registry_name, start_yelling_key, name, value])
+        {name, {left, op, right}}, acc ->
+          case acc do
+            %{^left => lval, ^right => rval} when is_integer(lval) and is_integer(rval) ->
+              val =
+                case op do
+                  "+" -> lval + rval
+                  "-" -> lval - rval
+                  "*" -> lval * rval
+                  "/" -> div(lval, rval)
+                end
+
+              Map.replace!(acc, name, val)
+
+            _ ->
+              acc
+          end
+      end)
     end)
-
-    Registry.dispatch(registry_name, start_yelling_key, fn entries ->
-      for {pid, _} <- entries, do: Monkey.yell(pid)
+    |> Enum.reduce_while(:keep_going, fn
+      %{"root" => val}, _ when is_integer(val) -> {:halt, val}
+      map, _ -> {:cont, map}
     end)
-
-    receive do
-      {"root", value} -> value
-    end
   end
 
   @doc """
