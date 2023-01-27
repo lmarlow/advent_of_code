@@ -31,11 +31,126 @@ defmodule AdventOfCode.Y2022.Day21 do
 
   def run(data, part) when is_binary(data), do: data |> parse() |> run(part)
 
-  def run(data, part) when is_list(data), do: data |> solve(part)
+  def run(data, part), do: data |> solve(part)
 
   def parse(data) do
     data
     |> String.split("\n", trim: true)
+    |> Enum.map(fn
+      <<name::binary-size(4), ": ", left::binary-size(4), " ", operator::binary-size(1), " ",
+        right::binary-size(4)>> ->
+        {name, {left, operator, right}}
+
+      <<name::binary-size(4), ": ", number::binary>> ->
+        {name, String.to_integer(number)}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defmodule Monkey do
+    use GenServer, restart: :transient
+
+    defstruct [:registry_name, :name, :left_name, :right_name, :op, :op_fn, :args, :value]
+
+    def yell(pid) when is_pid(pid) do
+      GenServer.cast(pid, :yell)
+    end
+
+    @impl true
+    def init([registry_name, name, {left_name, operator, right_name}]) do
+      {:ok, _} = Registry.register(registry_name, left_name, :left)
+      {:ok, _} = Registry.register(registry_name, right_name, :right)
+
+      op_fn =
+        case operator do
+          "+" -> &Kernel.+/2
+          "-" -> &Kernel.-/2
+          "*" -> &Kernel.*/2
+          "/" -> &Kernel.div/2
+        end
+
+      {:ok,
+       %__MODULE__{
+         registry_name: registry_name,
+         name: name,
+         left_name: left_name,
+         right_name: right_name,
+         args: [nil, nil],
+         op_fn: op_fn,
+         op: operator
+       }}
+    end
+
+    @impl true
+    def init([registry_name, start_yelling_key, name, value]) do
+      {:ok, _} = Registry.register(registry_name, start_yelling_key, value)
+
+      {:ok, %__MODULE__{registry_name: registry_name, name: name, value: value}}
+    end
+
+    @impl true
+    def handle_info(
+          {left_name, lvalue},
+          %__MODULE__{left_name: left_name, args: [nil, right_arg]} = state
+        ) do
+      state = %{state | args: [lvalue, right_arg]}
+
+      {:noreply, state, {:continue, :evaluate}}
+    end
+
+    @impl true
+    def handle_info(
+          {right_name, rvalue},
+          %__MODULE__{right_name: right_name, args: [left_arg, nil]} = state
+        ) do
+      state = %{state | args: [left_arg, rvalue]}
+
+      {:noreply, state, {:continue, :evaluate}}
+    end
+
+    @impl true
+    def handle_info(other, state) do
+      IO.inspect(other, label: state.name)
+      {:noreply, state}
+    end
+
+    @impl true
+    def handle_continue(
+          :evaluate,
+          %__MODULE__{args: [left_arg, right_arg] = args, value: nil} = state
+        )
+        when is_integer(left_arg) and is_integer(right_arg) do
+      value = apply(state.op_fn, args)
+
+      # IO.puts(
+      #   ~s[#{state.name} evaluated #{state.left_name}:#{left_arg} #{state.op} #{state.right_name}:#{right_arg} = #{value}]
+      # )
+
+      yell(self())
+
+      {:noreply, %{state | value: value}}
+    end
+
+    @impl true
+    def handle_continue(:evaluate, state), do: {:noreply, state}
+
+    @impl true
+    def handle_cast(
+          :yell,
+          %__MODULE__{registry_name: registry_name, name: name, value: value} = state
+        )
+        when is_integer(value) do
+      # IO.puts(~s[#{name} yells "#{value}"])
+
+      Registry.dispatch(registry_name, name, fn entries ->
+        for {pid, _} <- entries, do: send(pid, {name, value})
+      end)
+
+      {:noreply, state}
+    end
+
+    @impl true
+    def handle_cast(:yell, state), do: {:noreply, state}
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -114,14 +229,41 @@ defmodule AdventOfCode.Y2022.Day21 do
 
   """
   def solve_1(data) do
-    {1, :not_implemented}
+    registry_name = __MODULE__
+    start_yelling_key = :start_yelling
+
+    {:ok, _} =
+      Registry.start_link(
+        keys: :duplicate,
+        name: __MODULE__,
+        partitions: System.schedulers_online()
+      )
+
+    {:ok, _} = Registry.register(registry_name, "root", [])
+
+    data
+    |> Enum.each(fn
+      {name, {_, _, _} = equation} ->
+        GenServer.start_link(Monkey, [registry_name, name, equation])
+
+      {name, value} ->
+        GenServer.start_link(Monkey, [registry_name, start_yelling_key, name, value])
+    end)
+
+    Registry.dispatch(registry_name, start_yelling_key, fn entries ->
+      for {pid, _} <- entries, do: Monkey.yell(pid)
+    end)
+
+    receive do
+      {"root", value} -> value
+    end
   end
 
   @doc """
   # Part 2
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    {2, :not_implemented, data}
   end
 
   # --- </Solution Functions> ---

@@ -21,6 +21,7 @@ defmodule AdventOfCode.Y2022.Day21Test do
   pppw: cczh / lfqf
   lgvd: ljgn * ptdq
   drzm: hmdt - zczc
+  hmdt: 32
   """
 
   describe "part 1" do
@@ -29,7 +30,7 @@ defmodule AdventOfCode.Y2022.Day21Test do
     end
 
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(1) == 22_382_838_633_806
     end
   end
 
