@@ -36,11 +36,11 @@ defmodule AdventOfCode.Y2022.Day21Test do
 
   describe "part 2" do
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 301
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 3_099_532_691_300
     end
   end
 end

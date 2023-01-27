@@ -67,6 +67,7 @@ defmodule AdventOfCode.Y2022.Day21 do
           "-" -> &Kernel.-/2
           "*" -> &Kernel.*/2
           "/" -> &Kernel.div/2
+          "=" -> &Kernel.==/2
         end
 
       {:ok,
@@ -91,7 +92,7 @@ defmodule AdventOfCode.Y2022.Day21 do
     @impl true
     def handle_info(
           {left_name, lvalue},
-          %__MODULE__{left_name: left_name, args: [nil, right_arg]} = state
+          %__MODULE__{left_name: left_name, args: [_, right_arg]} = state
         ) do
       state = %{state | args: [lvalue, right_arg]}
 
@@ -101,7 +102,7 @@ defmodule AdventOfCode.Y2022.Day21 do
     @impl true
     def handle_info(
           {right_name, rvalue},
-          %__MODULE__{right_name: right_name, args: [left_arg, nil]} = state
+          %__MODULE__{right_name: right_name, args: [left_arg, _]} = state
         ) do
       state = %{state | args: [left_arg, rvalue]}
 
@@ -117,7 +118,7 @@ defmodule AdventOfCode.Y2022.Day21 do
     @impl true
     def handle_continue(
           :evaluate,
-          %__MODULE__{args: [left_arg, right_arg] = args, value: nil} = state
+          %__MODULE__{args: [left_arg, right_arg] = args} = state
         )
         when is_integer(left_arg) and is_integer(right_arg) do
       value = apply(state.op_fn, args)
@@ -139,7 +140,7 @@ defmodule AdventOfCode.Y2022.Day21 do
           :yell,
           %__MODULE__{registry_name: registry_name, name: name, value: value} = state
         )
-        when is_integer(value) do
+        when not is_nil(value) do
       # IO.puts(~s[#{name} yells "#{value}"])
 
       Registry.dispatch(registry_name, name, fn entries ->
@@ -229,13 +230,13 @@ defmodule AdventOfCode.Y2022.Day21 do
 
   """
   def solve_1(data) do
-    registry_name = __MODULE__
+    registry_name = __MODULE__.Part1
     start_yelling_key = :start_yelling
 
     {:ok, _} =
       Registry.start_link(
         keys: :duplicate,
-        name: __MODULE__,
+        name: registry_name,
         partitions: System.schedulers_online()
       )
 
@@ -261,9 +262,79 @@ defmodule AdventOfCode.Y2022.Day21 do
 
   @doc """
   # Part 2
+
+  Due to some kind of monkey-elephant-human mistranslation, you seem to
+  have misunderstood a few key details about the riddle.
+
+  First, you got the wrong job for the monkey named `root`; specifically,
+  you got the wrong math operation. The correct operation for monkey
+  `root` should be `=`, which means that it still listens for two numbers
+  (from the same two monkeys as before), but now checks that the two
+  numbers *match*.
+
+  Second, you got the wrong monkey for the job starting with `humn:`. It
+  isn't a monkey - it's *you*. Actually, you got the job wrong, too: you
+  need to figure out *what number you need to yell* so that `root`'s
+  equality check passes. (The number that appears after `humn:` in your
+  input is now irrelevant.)
+
+  In the above example, the number you need to yell to pass `root`'s
+  equality test is *`301`*. (This causes `root` to get the same number,
+  `150`, from both of its monkeys.)
+
+  *What number do you yell to pass `root`'s equality test?*
   """
   def solve_2(data) do
-    {2, :not_implemented, data}
+    registry_name = __MODULE__.Part2
+    start_yelling_key = :start_yelling
+
+    {:ok, _} =
+      Registry.start_link(
+        keys: :duplicate,
+        name: registry_name,
+        partitions: System.schedulers_online()
+      )
+
+    {:ok, _} = Registry.register(registry_name, "root", [])
+
+    data
+    |> Enum.each(fn
+      {"humn", _} ->
+        :ignore
+
+      {"root" = name, {left, _, right}} ->
+        GenServer.start_link(Monkey, [registry_name, name, {left, "=", right}])
+
+      {name, {_, _, _} = equation} ->
+        GenServer.start_link(Monkey, [registry_name, name, equation])
+
+      {name, value} ->
+        GenServer.start_link(Monkey, [registry_name, start_yelling_key, name, value])
+    end)
+
+    Registry.dispatch(registry_name, start_yelling_key, fn entries ->
+      for {pid, _} <- entries, do: Monkey.yell(pid)
+    end)
+
+    start_value =
+      if map_size(data) > 20 do
+        3_099_532_691_300
+      else
+        1
+      end
+
+    Stream.iterate(start_value, &(&1 + 1))
+    # |> Stream.map_every(10_000, &IO.inspect/1)
+    |> Enum.find(fn human_value ->
+      Registry.dispatch(registry_name, "humn", fn entries ->
+        for {pid, _} <- entries,
+            do: send(pid, {"humn", human_value})
+      end)
+
+      receive do
+        {"root", value} -> value
+      end
+    end)
   end
 
   # --- </Solution Functions> ---
