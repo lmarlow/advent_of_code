@@ -13,7 +13,7 @@ defmodule AdventOfCode.Helpers.InputReader do
         year |> build_path(day) |> File.read!()
       end
 
-      def input!, do: read!(unquote(year), unquote(day)) |> String.trim()
+      def input!, do: read!(unquote(year), unquote(day))
     end
   end
 end

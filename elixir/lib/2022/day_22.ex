@@ -16,11 +16,65 @@ defmodule AdventOfCode.Y2022.Day22 do
 
   def run(data, part) when is_binary(data), do: data |> parse() |> run(part)
 
-  def run(data, part) when is_list(data), do: data |> solve(part)
+  def run(data, part), do: data |> solve(part)
+
+  defmodule Parser do
+    import NimbleParsec
+
+    defparsec(
+      :directions,
+      choice([integer(min: 1), string("L"), string("R")])
+      |> repeat()
+    )
+  end
+
+  @cell ?.
+  @wall ?#
+
+  @right ">"
+  @down "v"
+  @left "<"
+  @up "^"
+
+  defstruct grid: %{}, x_dim: 1..1, y_dim: 1..1, position: {1, 1}, heading: @right, directions: []
 
   def parse(data) do
-    data
-    |> String.split("\n", trim: true)
+    [grove, directions] =
+      data
+      |> String.split("\n\n", trim: false)
+
+    [first_row | _] =
+      grove =
+      grove
+      |> String.split("\n")
+      |> Enum.map(&to_charlist/1)
+
+    max_x = length(first_row)
+    max_y = length(grove)
+
+    start_x =
+      first_row
+      |> Enum.with_index(1)
+      |> Enum.find_value(fn {cell, x} -> if cell == ?., do: x end)
+
+    grid =
+      for {row, y} <- grove |> Enum.with_index(1),
+          {cell, x} <- Enum.with_index(row, 1),
+          [cell] != ' ',
+          into: %{} do
+        {{x, y}, cell}
+      end
+
+    {:ok, directions, "", _, _, _} = Parser.directions(String.trim(directions))
+
+    %__MODULE__{
+      grid: grid,
+      x_dim: 1..max_x,
+      y_dim: 1..max_y,
+      position: {start_x, 1},
+      directions: directions,
+      heading: @right
+    }
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -144,8 +198,96 @@ defmodule AdventOfCode.Y2022.Day22 do
   password?*
 
   """
-  def solve_1(data) do
-    {1, :not_implemented, data}
+  def solve_1(%__MODULE__{} = grove) do
+    %__MODULE__{position: {x, y}, heading: heading} = walk(grove)
+
+    y * 1000 + x * 4 + heading_score(heading)
+  end
+
+  defp walk(%__MODULE__{directions: []} = grove), do: grove
+
+  defp walk(%__MODULE__{directions: [step | directions], heading: heading} = grove)
+       when step in ["R", "L"] do
+    %{grove | directions: directions, heading: rotate(heading, step)}
+    |> walk()
+  end
+
+  defp walk(%__MODULE__{directions: [step | directions]} = grove)
+       when is_integer(step) do
+    grove = %{grove | directions: directions}
+
+    Enum.reduce_while(1..step, grove, fn _, %__MODULE__{} = grove ->
+      next_position = next_position(grove.grid, grove.position, grove.heading)
+
+      if grove.grid[next_position] == @wall do
+        {:halt, grove}
+      else
+        {:cont, %{grove | position: next_position}}
+      end
+    end)
+    |> walk()
+  end
+
+  defp next_position(grid, {x0, y0} = p0, @right) do
+    {row_start, row_end} = start_end(grid, p0, @right)
+
+    if x0 == row_end, do: {row_start, y0}, else: {x0 + 1, y0}
+  end
+
+  defp next_position(grid, {x0, y0} = p0, @left) do
+    {row_start, row_end} = start_end(grid, p0, @left)
+
+    if(x0 == row_start,
+      do: {row_end, y0},
+      else: {x0 - 1, y0}
+    )
+  end
+
+  defp next_position(grid, {x0, y0} = p0, @up) do
+    {col_start, col_end} = start_end(grid, p0, @up)
+
+    if y0 == col_start, do: {x0, col_end}, else: {x0, y0 - 1}
+  end
+
+  defp next_position(grid, {x0, y0} = p0, @down) do
+    {col_start, col_end} = start_end(grid, p0, @down)
+
+    if y0 == col_end, do: {x0, col_start}, else: {x0, y0 + 1}
+  end
+
+  defp start_end(grid, {_x0, y0}, heading) when heading in [@right, @left] do
+    for {x, ^y0} <- Map.keys(grid) do
+      x
+    end
+    |> Enum.min_max()
+  end
+
+  defp start_end(grid, {x0, _y0}, heading) when heading in [@up, @down] do
+    for {^x0, y} <- Map.keys(grid) do
+      y
+    end
+    |> Enum.min_max()
+  rescue
+    e ->
+      IO.inspect({x0, heading})
+      reraise e, __STACKTRACE__
+  end
+
+  defp heading_score(@right), do: 0
+  defp heading_score(@down), do: 1
+  defp heading_score(@left), do: 2
+  defp heading_score(@up), do: 3
+
+  defp rotate(@right, "R"), do: @down
+  defp rotate(@down, "R"), do: @left
+  defp rotate(@left, "R"), do: @up
+  defp rotate(@up, "R"), do: @right
+
+  defp rotate(heading, "L") do
+    heading
+    |> rotate("R")
+    |> rotate("R")
+    |> rotate("R")
   end
 
   @doc """
