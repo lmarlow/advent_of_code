@@ -36,7 +36,12 @@ defmodule AdventOfCode.Y2022.Day22 do
   @left "<"
   @up "^"
 
-  defstruct grid: %{}, x_dim: 1..1, y_dim: 1..1, position: {1, 1}, heading: @right, directions: []
+  defstruct grid: %{},
+            row_dims: %{},
+            col_dims: %{},
+            position: {1, 1},
+            heading: @right,
+            directions: []
 
   def parse(data) do
     [grove, directions] =
@@ -65,12 +70,24 @@ defmodule AdventOfCode.Y2022.Day22 do
         {{x, y}, cell}
       end
 
+    row_dims =
+      for row <- 1..max_y, into: %{} do
+        {min_x, max_x} = Enum.min_max(for {x, ^row} <- Map.keys(grid), do: x)
+        {row, min_x..max_x}
+      end
+
+    col_dims =
+      for col <- 1..max_x, into: %{} do
+        {min_y, max_y} = Enum.min_max(for {^col, y} <- Map.keys(grid), do: y)
+        {col, min_y..max_y}
+      end
+
     {:ok, directions, "", _, _, _} = Parser.directions(String.trim(directions))
 
     %__MODULE__{
       grid: grid,
-      x_dim: 1..max_x,
-      y_dim: 1..max_y,
+      row_dims: row_dims,
+      col_dims: col_dims,
       position: {start_x, 1},
       directions: directions,
       heading: @right
@@ -217,7 +234,7 @@ defmodule AdventOfCode.Y2022.Day22 do
     grove = %{grove | directions: directions}
 
     Enum.reduce_while(1..step, grove, fn _, %__MODULE__{} = grove ->
-      next_position = next_position(grove.grid, grove.position, grove.heading)
+      next_position = next_position(grove)
 
       if grove.grid[next_position] == @wall do
         {:halt, grove}
@@ -228,49 +245,28 @@ defmodule AdventOfCode.Y2022.Day22 do
     |> walk()
   end
 
-  defp next_position(grid, {x0, y0} = p0, @right) do
-    {row_start, row_end} = start_end(grid, p0, @right)
+  defp next_position(%__MODULE__{row_dims: row_dims, position: {x0, y0}, heading: @right}) do
+    row_start..row_end = row_dims[y0]
 
     if x0 == row_end, do: {row_start, y0}, else: {x0 + 1, y0}
   end
 
-  defp next_position(grid, {x0, y0} = p0, @left) do
-    {row_start, row_end} = start_end(grid, p0, @left)
+  defp next_position(%__MODULE__{row_dims: row_dims, position: {x0, y0}, heading: @left}) do
+    row_start..row_end = row_dims[y0]
 
-    if(x0 == row_start,
-      do: {row_end, y0},
-      else: {x0 - 1, y0}
-    )
+    if x0 == row_start, do: {row_end, y0}, else: {x0 - 1, y0}
   end
 
-  defp next_position(grid, {x0, y0} = p0, @up) do
-    {col_start, col_end} = start_end(grid, p0, @up)
+  defp next_position(%__MODULE__{col_dims: col_dims, position: {x0, y0}, heading: @up}) do
+    col_start..col_end = col_dims[x0]
 
     if y0 == col_start, do: {x0, col_end}, else: {x0, y0 - 1}
   end
 
-  defp next_position(grid, {x0, y0} = p0, @down) do
-    {col_start, col_end} = start_end(grid, p0, @down)
+  defp next_position(%__MODULE__{col_dims: col_dims, position: {x0, y0}, heading: @down}) do
+    col_start..col_end = col_dims[x0]
 
     if y0 == col_end, do: {x0, col_start}, else: {x0, y0 + 1}
-  end
-
-  defp start_end(grid, {_x0, y0}, heading) when heading in [@right, @left] do
-    for {x, ^y0} <- Map.keys(grid) do
-      x
-    end
-    |> Enum.min_max()
-  end
-
-  defp start_end(grid, {x0, _y0}, heading) when heading in [@up, @down] do
-    for {^x0, y} <- Map.keys(grid) do
-      y
-    end
-    |> Enum.min_max()
-  rescue
-    e ->
-      IO.inspect({x0, heading})
-      reraise e, __STACKTRACE__
   end
 
   defp heading_score(@right), do: 0
