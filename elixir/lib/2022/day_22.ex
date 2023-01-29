@@ -229,19 +229,20 @@ defmodule AdventOfCode.Y2022.Day22 do
     |> walk()
   end
 
+  defp walk(%__MODULE__{directions: [0 | directions]} = grove) do
+    %{grove | directions: directions}
+    |> walk()
+  end
+
   defp walk(%__MODULE__{directions: [step | directions]} = grove)
        when is_integer(step) do
-    grove = %{grove | directions: directions}
+    next_position = next_position(grove)
 
-    Enum.reduce_while(1..step, grove, fn _, %__MODULE__{} = grove ->
-      next_position = next_position(grove)
-
-      if grove.grid[next_position] == @wall do
-        {:halt, grove}
-      else
-        {:cont, %{grove | position: next_position}}
-      end
-    end)
+    if grove.grid[next_position] == @wall do
+      %{grove | directions: directions}
+    else
+      %{grove | directions: [step - 1 | directions], position: next_position}
+    end
     |> walk()
   end
 
