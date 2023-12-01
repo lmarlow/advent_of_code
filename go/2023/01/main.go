@@ -41,7 +41,7 @@ func part1(input string) int {
 	for lineScanner.Scan() {
 		var digits []byte
 		for _, b := range []byte(lineScanner.Text()) {
-			if b >= 0x30 && b <= 0x39 {
+			if '0' <= b && b <= '9' {
 				digits = append(digits, b)
 			}
 		}
