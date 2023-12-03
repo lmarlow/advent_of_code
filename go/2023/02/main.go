@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -55,6 +56,18 @@ func (g game) possible(red int, green int, blue int) bool {
 	return true
 }
 
+func (g game) power() int {
+	var reds []int
+	var greens []int
+	var blues []int
+	for _, r := range g.rounds {
+		reds = append(reds, r.red)
+		greens = append(greens, r.green)
+		blues = append(blues, r.blue)
+	}
+	return slices.Max(reds) * slices.Max(greens) * slices.Max(blues)
+}
+
 // As you walk, the Elf shows you a small bag and some cubes which are either
 // red, green, or blue. Each time you play this game, he will hide a secret
 // number of cubes of each color in the bag, and your goal is to figure out
@@ -99,7 +112,7 @@ func part1(input string) int {
 	lineScanner := bufio.NewScanner(strings.NewReader(input))
 	games := []game{}
 	for lineScanner.Scan() {
-		games = append(games, part1ParseLine(lineScanner.Text()))
+		games = append(games, parseGame(lineScanner.Text()))
 	}
 
 	idSum := 0
@@ -111,7 +124,7 @@ func part1(input string) int {
 	return idSum
 }
 
-func part1ParseLine(line string) game {
+func parseGame(line string) game {
 	gameRounds := strings.Split(line, ":")
 	gameTitle := strings.Split(strings.TrimSpace(gameRounds[0]), " ")
 	gameID, _ := strconv.Atoi(gameTitle[1])
@@ -141,15 +154,45 @@ func part1ParseLine(line string) game {
 	}
 }
 
+// As you continue your walk, the Elf poses a second question: in each game
+// you played, what is the fewest number of cubes of each color that could
+// have been in the bag to make the game possible?
+//
+// Again consider the example games from earlier:
+//
+// Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+// Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+// Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+// Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+// Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
+//
+//	In game 1, the game could have been played with as few as 4 red, 2 green,
+//	and 6 blue cubes. If any color had even one fewer cube, the game would
+//	have been impossible.
+//	Game 2 could have been played with a minimum of 1 red, 3 green, and 4
+//	blue cubes.
+//	Game 3 must have been played with at least 20 red, 13 green, and 6 blue
+//	cubes.
+//	Game 4 required at least 14 red, 3 green, and 15 blue cubes.
+//	Game 5 needed no fewer than 6 red, 3 green, and 2 blue cubes in the bag.
+//
+// The power of a set of cubes is equal to the numbers of red, green, and blue
+// cubes multiplied together. The power of the minimum set of cubes in game 1 is
+// 48. In games 2-5 it was 12, 1560, 630, and 36, respectively. Adding up
+// these five powers produces the sum 2286.
+//
+// For each game, find the minimum set of cubes that must have been present.
+// What is the sum of the power of these sets?
 func part2(input string) int {
-	ans := 0
 	lineScanner := bufio.NewScanner(strings.NewReader(input))
+	games := []game{}
 	for lineScanner.Scan() {
-		ans += part2LineValue(lineScanner.Text())
+		games = append(games, parseGame(lineScanner.Text()))
 	}
-	return ans
-}
 
-func part2LineValue(line string) int {
-	return 0
+	powerSum := 0
+	for _, g := range games {
+		powerSum += g.power()
+	}
+	return powerSum
 }
