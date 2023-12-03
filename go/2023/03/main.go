@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	_ "embed"
 	"flag"
 	"fmt"
@@ -42,33 +41,56 @@ func part1(input string) int {
 	for y, line := range lines {
 		for x, b := range []byte(line) {
 			if isSymbol(b) {
-				ans += sumPartNumbers(x, y, lines)
+				for _, p := range parts(x, y, lines) {
+					ans += p
+				}
 			}
 		}
 	}
 	return ans
 }
 
-func sumPartNumbers(x int, y int, lines []string) int {
-	sum := 0
-	sum += part(x, y-1, lines, true)
-	sum += part(x-1, y, lines, false)
-	sum += part(x+1, y, lines, false)
-	sum += part(x, y+1, lines, true)
-	return sum
+func parts(x int, y int, lines []string) []int {
+	parts := []int{}
+	if p := part(x, y-1, lines); p > 0 {
+		parts = append(parts, p)
+	} else {
+		if p = part(x-1, y-1, lines); p > 0 {
+			parts = append(parts, p)
+		}
+		if p = part(x+1, y-1, lines); p > 0 {
+			parts = append(parts, p)
+		}
+	}
+	if p := part(x-1, y, lines); p > 0 {
+		parts = append(parts, p)
+	}
+	if p := part(x+1, y, lines); p > 0 {
+		parts = append(parts, p)
+	}
+	if p := part(x, y+1, lines); p > 0 {
+		parts = append(parts, p)
+	} else {
+		if p = part(x-1, y+1, lines); p > 0 {
+			parts = append(parts, p)
+		}
+		if p = part(x+1, y+1, lines); p > 0 {
+			parts = append(parts, p)
+		}
+	}
+	return parts
 }
 
-func part(x int, y int, lines []string, lookLeftRight bool) int {
+func part(x int, y int, lines []string) int {
 	if x < 0 || y < 0 || y >= len(lines) || x >= len(lines[y]) {
 		return 0
 	}
 	if isDigit(lines[y][x]) {
 		num := numberAt(x, lines[y])
 		return num
-	} else if lookLeftRight {
-		return part(x-1, y, lines, false) + part(x+1, y, lines, false)
+	} else {
+		return 0
 	}
-	return 0
 }
 
 func numberAt(x int, line string) int {
@@ -92,39 +114,22 @@ func isSymbol(b byte) bool {
 	return !(b == '.' || isDigit(b))
 }
 
+func isGear(b byte) bool {
+	return b == '*'
+}
+
 func part2(input string) int {
 	ans := 0
-	lineScanner := bufio.NewScanner(strings.NewReader(input))
-	for lineScanner.Scan() {
-		ans += part2LineValue(lineScanner.Text())
-	}
-	return ans
-}
 
-func part2LineValue(line string) int {
-	digit1 := getDigit(line, true)
-	digit2 := getDigit(line, false)
-	return digit1*10 + digit2
-}
-
-func getDigit(line string, leading bool) int {
-	finder := strings.HasSuffix
-	if leading {
-		finder = strings.HasPrefix
-	}
-
-	digits := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
-	digitWords := []string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
-	for n := range digits {
-		if finder(line, digits[n]) || finder(line, digitWords[n]) {
-			return n
+	lines := strings.Split(input, "\n")
+	for y, line := range lines {
+		for x, b := range []byte(line) {
+			if isGear(b) {
+				if gears := parts(x, y, lines); len(gears) == 2 {
+					ans += gears[0] * gears[1]
+				}
+			}
 		}
 	}
-
-	if leading {
-		line = line[1:]
-	} else {
-		line = line[:len(line)-1]
-	}
-	return getDigit(line, leading)
+	return ans
 }
