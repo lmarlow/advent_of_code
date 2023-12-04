@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	_ "embed"
 	"flag"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -36,10 +38,35 @@ func main() {
 func part1(input string) int {
 	ans := 0
 
-	// lines := strings.Split(input, "\n")
-	// for y, line := range lines {
-	// }
+	lines := strings.Split(input, "\n")
+	for _, line := range lines {
+		_, cards, _ := strings.Cut(line, ":")
+		strWinners, strPlayed, _ := strings.Cut(cards, "|")
+		winners := words(strWinners)
+		played := words(strPlayed)
+		score := 0
+		for _, p := range played {
+			if slices.Contains(winners, p) {
+				if score == 0 {
+					score = 1
+				} else {
+					score = score << 1
+				}
+			}
+		}
+		ans += score
+	}
 	return ans
+}
+
+func words(s string) []string {
+	wordList := []string{}
+	scanner := bufio.NewScanner(strings.NewReader(s))
+	scanner.Split(bufio.ScanWords)
+	for scanner.Scan() {
+		wordList = append(wordList, scanner.Text())
+	}
+	return wordList
 }
 
 func part2(input string) int {
