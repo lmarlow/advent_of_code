@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"log"
 	"slices"
 	"strings"
 )
@@ -44,19 +45,22 @@ func part1(input string) int {
 		strWinners, strPlayed, _ := strings.Cut(cards, "|")
 		winners := words(strWinners)
 		played := words(strPlayed)
-		score := 0
-		for _, p := range played {
-			if slices.Contains(winners, p) {
-				if score == 0 {
-					score = 1
-				} else {
-					score = score << 1
-				}
-			}
+		if numMatched := numMatches(winners, played); numMatched > 0 {
+			score := 1 << (numMatched - 1)
+			ans += score
 		}
-		ans += score
 	}
 	return ans
+}
+
+func numMatches(winningNumbers []string, playedNumbers []string) int {
+	count := 0
+	for _, p := range playedNumbers {
+		if slices.Contains(winningNumbers, p) {
+			count += 1
+		}
+	}
+	return count
 }
 
 func words(s string) []string {
@@ -69,11 +73,52 @@ func words(s string) []string {
 	return wordList
 }
 
+type Card struct {
+	WinningNumbers []string
+	PlayedNumbers  []string
+	ID             int
+	NumMatches     int
+	Count          int
+}
+
+func NewCard(line string) *Card {
+	cardID, cards, _ := strings.Cut(line, ":")
+	var id int
+	_, _ = fmt.Sscanf(cardID, "Card %d", &id)
+	strWinners, strPlayed, _ := strings.Cut(cards, "|")
+	winners := words(strWinners)
+	played := words(strPlayed)
+
+	return &Card{
+		ID:             id,
+		WinningNumbers: winners,
+		PlayedNumbers:  played,
+		NumMatches:     numMatches(winners, played),
+		Count:          1,
+	}
+}
+
 func part2(input string) int {
 	ans := 0
 
-	// lines := strings.Split(input, "\n")
-	// for y, line := range lines {
-	// }
+	lines := strings.Split(input, "\n")
+	cards := make(map[int]*Card, len(lines))
+	for _, line := range lines {
+		card := NewCard(line)
+		cards[card.ID] = card
+	}
+	for n := range lines {
+		cardID := n + 1
+		card, ok := cards[cardID]
+		if !ok {
+			log.Fatalf("Unknown card: %d", cardID)
+		}
+		for i := cardID + 1; i <= cardID+card.NumMatches; i++ {
+			cards[i].Count += card.Count
+		}
+	}
+	for _, card := range cards {
+		ans += card.Count
+	}
 	return ans
 }
