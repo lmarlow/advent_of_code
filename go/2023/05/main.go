@@ -4,6 +4,9 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"log"
+	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -33,15 +36,92 @@ func main() {
 	}
 }
 
+type resourceMap struct {
+	src  int
+	dst  int
+	size int
+}
+
+func (r *resourceMap) destination(src int) (dst int, ok bool) {
+	ok = src >= r.src && src < r.src+r.size
+	if ok {
+		dst = r.dst + src - r.src
+	}
+	return dst, ok
+}
+
+func newResourceMap(src, dst, size int) *resourceMap {
+	return &resourceMap{src, dst, size}
+}
+
+type resourceMapper struct {
+	name         string
+	resourceMaps []resourceMap
+}
+
+func newResourceMapper(name string) *resourceMapper {
+	return &resourceMapper{name: name}
+}
+
+func (m *resourceMapper) addMap(src, dst, size int) {
+	m.resourceMaps = append(m.resourceMaps, *newResourceMap(src, dst, size))
+}
+
+func (m *resourceMapper) destination(src int) int {
+	for _, r := range m.resourceMaps {
+		if dst, ok := r.destination(src); ok {
+			return dst
+		}
+	}
+	return src
+}
+
+func destination(src int, resourceMappers []*resourceMapper) int {
+	dst := src
+	for _, m := range resourceMappers {
+		dst = m.destination(dst)
+	}
+	return dst
+}
+
 func part1(input string) int {
 	ans := 0
 
 	lines := strings.Split(input, "\n")
-	for _, line := range lines {
-		fmt.Println(line)
+	_, strSeeds, _ := strings.Cut(lines[0], ":")
+	seeds := strings2Ints(strings.Fields(strSeeds))
+	resourceMappers := []*resourceMapper{}
+	var currentMapper *resourceMapper
+	var dst, src, size int
+	for _, line := range lines[1:] {
+		if line == "" {
+			continue
+		} else if name, found := strings.CutSuffix(line, " map:"); found {
+			currentMapper = newResourceMapper(name)
+			resourceMappers = append(resourceMappers, currentMapper)
+		} else if n, _ := fmt.Sscanf(line, "%d %d %d", &dst, &src, &size); n == 3 {
+			currentMapper.addMap(src, dst, size)
+		}
 	}
 
+	var locations []int
+	for _, seed := range seeds {
+		locations = append(locations, destination(seed, resourceMappers))
+	}
+
+	ans = slices.Min(locations)
 	return ans
+}
+
+func strings2Ints(intStrings []string) (ints []int) {
+	for _, s := range intStrings {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ints = append(ints, i)
+	}
+	return ints
 }
 
 func part2(input string) int {
