@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -47,7 +48,7 @@ func (r *resourceMap) destination(src int) (dst int, ok bool) {
 	if ok {
 		dst = r.dst + src - r.src
 	}
-	return dst, ok
+	return
 }
 
 func newResourceMap(src, dst, size int) *resourceMap {
@@ -84,13 +85,7 @@ func destination(src int, resourceMappers []*resourceMapper) int {
 	return dst
 }
 
-func part1(input string) int {
-	ans := 0
-
-	lines := strings.Split(input, "\n")
-	_, strSeeds, _ := strings.Cut(lines[0], ":")
-	seeds := strings2Ints(strings.Fields(strSeeds))
-	resourceMappers := []*resourceMapper{}
+func parseResourceMappers(lines []string) (resourceMappers []*resourceMapper) {
 	var currentMapper *resourceMapper
 	var dst, src, size int
 	for _, line := range lines[1:] {
@@ -103,6 +98,17 @@ func part1(input string) int {
 			currentMapper.addMap(src, dst, size)
 		}
 	}
+	return
+}
+
+func part1(input string) int {
+	ans := 0
+
+	lines := strings.Split(input, "\n")
+	_, strSeeds, _ := strings.Cut(lines[0], ":")
+	seeds := strings2Ints(strings.Fields(strSeeds))
+
+	resourceMappers := parseResourceMappers(lines[1:])
 
 	var locations []int
 	for _, seed := range seeds {
@@ -128,8 +134,19 @@ func part2(input string) int {
 	ans := 0
 
 	lines := strings.Split(input, "\n")
-	for _, line := range lines {
-		fmt.Println(line)
+	_, strSeeds, _ := strings.Cut(lines[0], ":")
+	seedRanges := strings2Ints(strings.Fields(strSeeds))
+
+	resourceMappers := parseResourceMappers(lines[1:])
+
+	ans = math.MaxInt
+	for i := 0; i < len(seedRanges); i = i + 2 {
+		s := seedRanges[i]
+		seedMax := s + seedRanges[i+1]
+		for ; s < seedMax; s++ {
+			loc := destination(s, resourceMappers)
+			ans = min(loc, ans)
+		}
 	}
 
 	return ans

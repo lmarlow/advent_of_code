@@ -70,11 +70,11 @@ func Test_part2(t *testing.T) {
 		input string
 		want  int
 	}{
-		// {
-		// 	name:  "sample",
-		// 	input: sample,
-		// 	want:  -1,
-		// },
+		{
+			name:  "sample",
+			input: sample,
+			want:  46,
+		},
 		// {
 		// 	name:  "actual",
 		// 	input: input,
