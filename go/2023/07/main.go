@@ -63,31 +63,57 @@ type hand struct {
 }
 
 func (h *hand) handType() int {
-	runeSeen := make(map[rune]bool, len(h.cards))
+	runeCounts := make(map[rune]int, len(h.cards))
 	var counts []int
 	for _, c := range h.cards {
-		if _, ok := runeSeen[c]; !ok {
-			runeSeen[c] = true
+		if _, ok := runeCounts[c]; !ok {
+			count := strings.Count(h.cards, string(c))
+			runeCounts[c] = count
 			counts = append(counts, strings.Count(h.cards, string(c)))
 		}
 	}
 	slices.Sort(counts)
 	slices.Reverse(counts)
 
+	jokerCount := 0
+	if cardValues['J'] == -1 {
+		jokerCount = runeCounts['J']
+	}
+
 	switch {
 	case counts[0] == 5:
 		return five
 	case counts[0] == 4:
+		if jokerCount > 0 {
+			return five
+		}
 		return four
 	case counts[0] == 3 && counts[1] == 2:
+		if jokerCount > 0 {
+			return five
+		}
 		return fullHouse
 	case counts[0] == 3:
+		if jokerCount > 0 {
+			return four
+		}
 		return three
 	case counts[0] == 2 && counts[1] == 2:
+		if jokerCount > 1 {
+			return four
+		} else if jokerCount == 1 {
+			return fullHouse
+		}
 		return twoPair
 	case counts[0] == 2:
+		if jokerCount > 0 {
+			return three
+		}
 		return pair
 	default:
+		if jokerCount > 0 {
+			return pair
+		}
 		return high
 	}
 }
@@ -138,5 +164,11 @@ func part1(input string) (ans int) {
 }
 
 func part2(input string) (ans int) {
-	return
+	oldJValue := cardValues['J']
+	cardValues['J'] = -1
+	defer func() {
+		cardValues['J'] = oldJValue
+	}()
+
+	return part1(input)
 }
