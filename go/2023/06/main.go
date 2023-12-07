@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -64,12 +65,21 @@ func part1(input string) (ans int) {
 	return
 }
 
-func part2(input string) int {
-	ans := 0
+func part2(input string) (ans int) {
+	lines := strings.Split(input, "\n")
+	_, strValues, _ := strings.Cut(lines[0], ":")
+	time, _ := strconv.Atoi(strings.ReplaceAll(strValues, " ", ""))
 
-	_ = strings.Split(input, "\n")
+	_, strValues, _ = strings.Cut(lines[1], ":")
+	distance, _ := strconv.Atoi(strings.ReplaceAll(strValues, " ", ""))
 
-	return ans
+	sq := math.Sqrt(float64(time*time - (4 * 1 * (distance + 1))))
+	maxRate := int((float64(time) + sq) / 2)
+	minRate := int((float64(time) - sq) / 2)
+
+	ans = maxRate - minRate
+
+	return
 }
 
 func strings2Ints(intStrings []string) (ints []int) {
