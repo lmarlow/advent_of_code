@@ -8,8 +8,7 @@ var sample = `LLR
 
 AAA = (BBB, BBB)
 BBB = (AAA, ZZZ)
-ZZZ = (ZZZ, ZZZ)
-`
+ZZZ = (ZZZ, ZZZ)`
 
 func Test_part1(t *testing.T) {
 	tests := []struct {
@@ -25,7 +24,7 @@ func Test_part1(t *testing.T) {
 		{
 			name:  "actual",
 			input: input,
-			want:  -1,
+			want:  11567,
 		},
 	}
 	for _, tt := range tests {

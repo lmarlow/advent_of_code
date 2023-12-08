@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -34,6 +35,36 @@ func main() {
 }
 
 func part1(input string) (ans int) {
+	lines := strings.Split(input, "\n")
+	steps := lines[0]
+
+	network := make(map[string][]string, len(lines[2:]))
+	for _, line := range lines[2:] {
+		var node, left, right string
+		n, err := fmt.Sscanf(line, "%3s = (%3s, %3s)", &node, &left, &right)
+		if n != 3 {
+			log.Fatalf("matched %d fields, not 3\n%v\n", n, err)
+		}
+		network[node] = []string{left, right}
+	}
+
+	currentNode := `AAA`
+	for {
+		for _, step := range steps {
+			ans++
+			switch step {
+			case 'L':
+				currentNode = network[currentNode][0]
+			case 'R':
+				currentNode = network[currentNode][1]
+			default:
+				log.Fatalf("Unknown step: %c", step)
+			}
+			if currentNode == `ZZZ` {
+				return ans
+			}
+		}
+	}
 	return
 }
 
