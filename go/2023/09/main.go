@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -71,22 +72,13 @@ func part1(input string) (ans int) {
 	return ans
 }
 
-func completeHeadHistory(history [][]int) (ans int) {
-	prev := history[len(history)-1]
-	diffs := diffs(prev)
-	if allZero(diffs) {
-		ans = prev[0]
-	} else {
-		ans = prev[0] - completeHeadHistory(append(history, diffs))
-	}
-	return
-}
-
 func part2(input string) (ans int) {
 	lines := strings.Split(input, "\n")
 	for _, line := range lines {
 		var history [][]int
-		ans += completeHeadHistory(append(history, strings2Ints(strings.Fields(line))))
+		nums := strings2Ints(strings.Fields(line))
+		slices.Reverse(nums)
+		ans += completeTailHistory(append(history, nums))
 	}
 	return ans
 }
