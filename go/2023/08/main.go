@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/big"
 	"strings"
 )
 
@@ -65,9 +66,74 @@ func part1(input string) (ans int) {
 			}
 		}
 	}
-	return
 }
 
-func part2(input string) (ans int) {
-	return part1(input)
+func lcm(nums []int) uint64 {
+	var bigNums []*big.Int
+	for _, n := range nums {
+		bigNums = append(bigNums, big.NewInt(int64(n)))
+	}
+
+	gcd := bigNums[0]
+
+	for i := 1; i < len(bigNums); i++ {
+		gcd = new(big.Int).GCD(nil, nil, gcd, bigNums[i])
+	}
+
+	lcm := bigNums[0]
+	for i := 1; i < len(bigNums); i++ {
+		prod := lcm.Mul(lcm, bigNums[i])
+		lcm = prod.Div(prod, gcd)
+	}
+
+	return lcm.Uint64()
+}
+
+func part2(input string) int {
+	lines := strings.Split(input, "\n")
+	steps := lines[0]
+
+	network := make(map[string][]string, len(lines[2:]))
+	var currentNodes []string
+	for _, line := range lines[2:] {
+		var node, left, right string
+		n, err := fmt.Sscanf(line, "%3s = (%3s, %3s)", &node, &left, &right)
+		if n != 3 {
+			log.Fatalf("matched %d fields, not 3\n%v\n", n, err)
+		}
+		network[node] = []string{left, right}
+		if strings.HasSuffix(node, `A`) {
+			currentNodes = append(currentNodes, node)
+		}
+	}
+
+	ans := 0
+	nodeSteps := make([]int, len(currentNodes))
+	for {
+		for _, step := range steps {
+			ans++
+			zCount := 0
+			for i, currentNode := range currentNodes {
+				if nodeSteps[i] > 0 {
+					zCount++
+					continue
+				}
+				switch step {
+				case 'L':
+					currentNodes[i] = network[currentNode][0]
+				case 'R':
+					currentNodes[i] = network[currentNode][1]
+				default:
+					log.Fatalf("Unknown step: %c", step)
+				}
+				if strings.HasSuffix(currentNodes[i], `Z`) {
+					nodeSteps[i] = ans
+					zCount++
+				}
+			}
+			if zCount == len(currentNodes) {
+				return int(lcm(nodeSteps))
+			}
+		}
+	}
 }
