@@ -35,17 +35,27 @@ func main() {
 	}
 }
 
+func diffs(nums []int) (diffs []int) {
+	diffs = make([]int, len(nums)-1)
+	for i := 0; i < len(nums)-1; i++ {
+		diffs[i] = nums[i+1] - nums[i]
+	}
+	return
+}
+
+func allZero(nums []int) bool {
+	for _, n := range nums {
+		if n != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func completeTailHistory(history [][]int) int {
 	prev := history[len(history)-1]
-	diffs := make([]int, len(prev)-1)
-	for i := 0; i < len(prev)-1; i++ {
-		diffs[i] = prev[i+1] - prev[i]
-	}
-	allZero := true
-	for _, n := range diffs {
-		allZero = allZero && n == 0
-	}
-	if allZero {
+	diffs := diffs(prev)
+	if allZero(diffs) {
 		return prev[len(prev)-1]
 	} else {
 		return prev[len(prev)-1] + completeTailHistory(append(history, diffs))
@@ -63,15 +73,8 @@ func part1(input string) (ans int) {
 
 func completeHeadHistory(history [][]int) (ans int) {
 	prev := history[len(history)-1]
-	diffs := make([]int, len(prev)-1)
-	for i := 0; i < len(prev)-1; i++ {
-		diffs[i] = prev[i+1] - prev[i]
-	}
-	allZero := true
-	for _, n := range diffs {
-		allZero = allZero && n == 0
-	}
-	if allZero {
+	diffs := diffs(prev)
+	if allZero(diffs) {
 		ans = prev[0]
 	} else {
 		ans = prev[0] - completeHeadHistory(append(history, diffs))
