@@ -35,7 +35,7 @@ func main() {
 	}
 }
 
-func completedHistory(history [][]int) int {
+func completeTailHistory(history [][]int) int {
 	prev := history[len(history)-1]
 	diffs := make([]int, len(prev)-1)
 	for i := 0; i < len(prev)-1; i++ {
@@ -48,7 +48,7 @@ func completedHistory(history [][]int) int {
 	if allZero {
 		return prev[len(prev)-1]
 	} else {
-		return prev[len(prev)-1] + completedHistory(append(history, diffs))
+		return prev[len(prev)-1] + completeTailHistory(append(history, diffs))
 	}
 }
 
@@ -56,14 +56,36 @@ func part1(input string) (ans int) {
 	lines := strings.Split(input, "\n")
 	for _, line := range lines {
 		var history [][]int
-		ans += completedHistory(append(history, strings2Ints(strings.Fields(line))))
+		ans += completeTailHistory(append(history, strings2Ints(strings.Fields(line))))
 	}
 	return ans
 }
 
-func part2(input string) int {
+func completeHeadHistory(history [][]int) (ans int) {
+	prev := history[len(history)-1]
+	diffs := make([]int, len(prev)-1)
+	for i := 0; i < len(prev)-1; i++ {
+		diffs[i] = prev[i+1] - prev[i]
+	}
+	allZero := true
+	for _, n := range diffs {
+		allZero = allZero && n == 0
+	}
+	if allZero {
+		ans = prev[0]
+	} else {
+		ans = prev[0] - completeHeadHistory(append(history, diffs))
+	}
+	return
+}
+
+func part2(input string) (ans int) {
 	lines := strings.Split(input, "\n")
-	return len(lines)
+	for _, line := range lines {
+		var history [][]int
+		ans += completeHeadHistory(append(history, strings2Ints(strings.Fields(line))))
+	}
+	return ans
 }
 
 func strings2Ints(intStrings []string) (ints []int) {

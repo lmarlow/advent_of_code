@@ -40,16 +40,16 @@ func Test_part2(t *testing.T) {
 		input string
 		want  int
 	}{
-		// {
-		// 	name:  "sample",
-		// 	input: sample,
-		// 	want:  -1,
-		// },
-		// {
-		// 	name:  "actual",
-		// 	input: input,
-		// 	want:  -1,
-		// },
+		{
+			name:  "sample",
+			input: sample,
+			want:  2,
+		},
+		{
+			name:  "actual",
+			input: input,
+			want:  988,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
