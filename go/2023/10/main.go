@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -61,26 +62,73 @@ func (p IntPair) West() IntPair {
 	return IntPair{p.X - 1, p.Y}
 }
 
-func (p IntPair) Neighbors() []IntPair {
-	return []IntPair{p.North(), p.East(), p.South(), p.West()}
+func (p IntPair) Neighbors(pipe byte) (ns []IntPair) {
+	switch pipe {
+	case 'S':
+		ns = []IntPair{p.North(), p.East(), p.South(), p.West()}
+	case '|':
+		ns = []IntPair{p.North(), p.South()}
+	case '7':
+		ns = []IntPair{p.West(), p.South()}
+	case 'F':
+		ns = []IntPair{p.East(), p.South()}
+	case '-':
+		ns = []IntPair{p.East(), p.West()}
+	case 'J':
+		ns = []IntPair{p.North(), p.West()}
+	case 'L':
+		ns = []IntPair{p.North(), p.East()}
+	default:
+		ns = []IntPair{}
+	}
+	return
+}
+
+func (p IntPair) Next(prevXY IntPair, currentPipe byte) IntPair {
+	if ns := p.Neighbors(currentPipe); ns[0] == prevXY {
+		return ns[1]
+	} else {
+		return ns[0]
+	}
 }
 
 func part1(input string) (ans int) {
 	pipes := make(map[IntPair]byte)
-	var s, p1, p2 IntPair
+	var startXY, prevXY, headXY IntPair
 	for y, line := range strings.Split(input, "\n") {
 		for x, b := range line {
 			if b != '.' {
 				xy := IntPair{x, y}
 				pipes[xy] = byte(b)
 				if b == 'S' {
-					s = xy
+					startXY = xy
+					prevXY = startXY
 				}
 			}
 		}
 	}
 
-	ans = len(pipes)
+	var currentPipe byte
+	var ok bool
+	if currentPipe, ok = pipes[startXY.North()]; ok && slices.Contains(north, currentPipe) {
+		headXY = startXY.North()
+	} else if currentPipe, ok = pipes[startXY.East()]; ok && slices.Contains(east, currentPipe) {
+		headXY = startXY.East()
+	} else if currentPipe, ok = pipes[startXY.South()]; ok && slices.Contains(south, currentPipe) {
+		headXY = startXY.South()
+	} else if currentPipe, ok = pipes[startXY.West()]; ok && slices.Contains(west, currentPipe) {
+		headXY = startXY.West()
+	}
+	currentPipe = pipes[headXY]
+	ans = 1
+
+	for headXY != startXY {
+		prevXY, headXY = headXY, headXY.Next(prevXY, currentPipe)
+		currentPipe = pipes[headXY]
+		ans++
+	}
+
+	ans /= 2
 	return
 }
 
