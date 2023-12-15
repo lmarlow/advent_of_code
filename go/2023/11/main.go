@@ -26,7 +26,7 @@ func main() {
 	fmt.Println("Running part", part)
 
 	if part == 2 {
-		ans := part2(input)
+		ans := part2(input, 1000000)
 		fmt.Println("Output:", ans)
 	} else {
 		ans := part1(input)
@@ -39,7 +39,11 @@ type IntTuple struct {
 	Y int
 }
 
-func part1(input string) (ans int) {
+func part1(input string) int {
+	return sumDistances(input, 2)
+}
+
+func sumDistances(input string, growthFactor int) (ans int) {
 	lines := strings.Split(input, "\n")
 
 	hashXIndexes := make(map[int]bool)
@@ -67,12 +71,7 @@ func part1(input string) (ans int) {
 		}
 	}
 
-	for _, hashLocation := range hashes {
-		adjustX, _ := slices.BinarySearch(emptyColumnIndexes, hashLocation.X)
-		adjustY, _ := slices.BinarySearch(emptyRowIndexes, hashLocation.Y)
-		hashLocation.X += adjustX
-		hashLocation.Y += adjustY
-	}
+	expandUniverse(emptyRowIndexes, emptyColumnIndexes, hashes, growthFactor)
 
 	for i, hashLocation := range hashes[:len(hashes)-1] {
 		for j := i + 1; j < len(hashes); j++ {
@@ -91,9 +90,15 @@ func part1(input string) (ans int) {
 	return
 }
 
-func part2(input string) (ans int) {
-	lines := strings.Split(input, "\n")
+func expandUniverse(emptyRowIndexes, emptyColumnIndexes []int, galaxyLocations []*IntTuple, growthFactor int) {
+	for _, g := range galaxyLocations {
+		adjustX, _ := slices.BinarySearch(emptyColumnIndexes, g.X)
+		adjustY, _ := slices.BinarySearch(emptyRowIndexes, g.Y)
+		g.X += adjustX * (growthFactor - 1)
+		g.Y += adjustY * (growthFactor - 1)
+	}
+}
 
-	ans = len(lines)
-	return
+func part2(input string, growthFactor int) (ans int) {
+	return sumDistances(input, growthFactor)
 }
