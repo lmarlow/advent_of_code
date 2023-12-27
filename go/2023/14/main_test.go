@@ -4,7 +4,16 @@ import (
 	"testing"
 )
 
-var sample = ``
+var sample = `O....#....
+O.OO#....#
+.....##...
+OO.#O....O
+.O.....O#.
+O.#..O.#.#
+..O..#O..O
+.......O..
+#....###..
+#OO..#....`
 
 func Test_part1(t *testing.T) {
 	tests := []struct {
@@ -15,13 +24,13 @@ func Test_part1(t *testing.T) {
 		{
 			name:  "sample",
 			input: sample,
-			want:  -1,
+			want:  136,
 		},
-		// {
-		// 	name:  "actual",
-		// 	input: input,
-		// 	want:  -1,
-		// },
+		{
+			name:  "actual",
+			input: input,
+			want:  105208,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

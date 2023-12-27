@@ -35,8 +35,24 @@ func main() {
 
 func part1(input string) (ans int) {
 	lines := strings.Split(input, "\n")
+	n := len(lines)
 
-	ans = len(lines)
+	obstructions := make([]int, len(lines[0]))
+
+	for j, row := range lines {
+		// fmt.Println(obstructions)
+		for i := range row {
+			switch row[i] {
+			case '#':
+				obstructions[i] = j + 1
+			case 'O':
+				ans += n - obstructions[i]
+				// fmt.Println(j, i, obstructions[i])
+				obstructions[i]++
+			}
+		}
+	}
+
 	return
 }
 
