@@ -9,3 +9,6 @@ test: input.txt
 
 input.txt:
 	@curl --silent https://adventofcode.com/$(YEAR)/day/$(DAY)/input --cookie "session=${COOKIE}" --output $@
+
+puzzle.html:
+	@curl --silent https://adventofcode.com/$(YEAR)/day/$(DAY) --cookie "session=${COOKIE}" --output $@
