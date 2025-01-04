@@ -27,3 +27,6 @@ advent_of_code-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# user specific input files
+/priv/input_files/
