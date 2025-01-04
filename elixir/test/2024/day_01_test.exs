@@ -7,15 +7,21 @@ defmodule AdventOfCode.Y2024.Day01Test do
   alias AdventOfCode.Y2024.Day01, as: Solution
 
   @sample_data ~S"""
+  3   4
+  4   3
+  2   5
+  1   3
+  3   9
+  3   3
   """
 
   describe "part 1" do
     test "example" do
-      assert Solution.run(@sample_data, 1) == nil
+      assert Solution.run(@sample_data, 1) == 11
     end
 
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(1) == 2_066_446
     end
   end
 
