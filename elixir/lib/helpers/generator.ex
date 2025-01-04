@@ -18,6 +18,8 @@ defmodule AdventOfCode.Helpers.Generator do
   """
   @spec run({integer(), integer()}) :: String.t()
   def run({year, day}) do
+    _ = Application.ensure_all_started(:req)
+
     input_dir = Path.join("priv", "input_files")
     build_priv_dir = Path.join(:code.priv_dir(:advent_of_code), "input_files")
     code_dir = Path.join("lib", to_string(year))
@@ -80,16 +82,12 @@ defmodule AdventOfCode.Helpers.Generator do
   end
 
   defp fetch_cookie(year, day) do
-    HTTPoison.start()
+    url = "https://adventofcode.com/#{year}/day/#{day}/input"
 
-    "https://adventofcode.com/#{year}/day/#{day}/input"
-    |> HTTPoison.get([{"cookie", "session=#{System.get_env("COOKIE", "")}"}])
-    |> then(fn response ->
-      case response do
-        {:ok, %HTTPoison.Response{body: body}} -> {:ok, body}
-        _ -> nil
-      end
-    end)
+    with {:ok, %{status: 200, body: body}} <-
+           Req.get(url, headers: [{"cookie", "session=#{System.get_env("COOKIE", "")}"}]) do
+      {:ok, body}
+    end
   end
 
   defp create_input_file(path, year, day) do
@@ -99,17 +97,12 @@ defmodule AdventOfCode.Helpers.Generator do
   end
 
   def get_day_doc(year, day) do
-    HTTPoison.start()
+    url = "https://adventofcode.com/#{year}/day/#{day}"
 
-    "https://adventofcode.com/#{year}/day/#{day}"
-    |> HTTPoison.get()
-    |> then(fn response ->
-      case response do
-        {:ok, %HTTPoison.Response{body: body}} -> body
-        _ -> nil
-      end
-    end)
-    |> Floki.parse_document!()
+    with {:ok, %{status: 200, body: body}} <- Req.get(url),
+         {:ok, parsed_body} <- Floki.parse_document!(body) do
+      parsed_body
+    end
   end
 
   defp get_title(doc) do

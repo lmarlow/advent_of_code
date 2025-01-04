@@ -35,6 +35,6 @@ defmodule AdventOfCode.Helpers.InputParser do
   defp validated(%{year: year, day: day}), do: (validate({year, day}) && {year, day}) || nil
   defp validated(v), do: (validate(v) && v) || nil
 
-  defp validate({year, day}), do: [year in @years, day in @days] |> Enum.all?()
+  defp validate({year, day}), do: year in @years and day in @days
   defp validate(_), do: false
 end
