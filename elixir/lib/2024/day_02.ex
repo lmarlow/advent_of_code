@@ -92,12 +92,7 @@ defmodule AdventOfCode.Y2024.Day02 do
         nums = Enum.map(String.split(line, " ", trim: true), &String.to_integer/1),
         reduce: 0 do
       acc ->
-        sorted = Enum.sort(nums)
-
-        if (nums == sorted or sorted == Enum.reverse(nums)) and
-             nums
-             |> Enum.chunk_every(2, 1, :discard)
-             |> Enum.all?(fn [a, b] -> abs(a - b) in 1..3 end) do
+        if safe_report?(nums) do
           acc + 1
         else
           acc
@@ -132,8 +127,35 @@ defmodule AdventOfCode.Y2024.Day02 do
   remove a single level from unsafe reports. How many reports are now safe?
   """
   def solve_2(data) do
-    {2, :not_implemented}
+    for line <- data,
+        nums = Enum.map(String.split(line, " ", trim: true), &String.to_integer/1),
+        reduce: 0 do
+      acc ->
+        if dampener_safe_report?(nums) do
+          acc + 1
+        else
+          acc
+        end
+    end
   end
 
   # --- </Solution Functions> ---
+  defp safe_report?(nums) do
+    sorted = Enum.sort(nums)
+
+    (nums == sorted or sorted == Enum.reverse(nums)) and
+      nums
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.all?(fn [a, b] -> abs(a - b) in 1..3 end)
+  end
+
+  defp dampener_safe_report?(nums) do
+    [nums | variations(nums)]
+    |> Enum.any?(&safe_report?/1)
+  end
+
+  defp variations(nums) do
+    0..(length(nums) - 1)
+    |> Enum.map(&List.delete_at(nums, &1))
+  end
 end
