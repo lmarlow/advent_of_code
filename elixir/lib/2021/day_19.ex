@@ -29,13 +29,13 @@ defmodule AdventOfCode.Y2021.Day19 do
 
   @doc """
   """
-  def solve_1(data) do
+  def solve_1(_data) do
     {1, :not_implemented}
   end
 
   @doc """
   """
-  def solve_2(data) do
+  def solve_2(_data) do
     {2, :not_implemented}
   end
 

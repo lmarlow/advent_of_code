@@ -567,10 +567,10 @@ defmodule AdventOfCode.Y2022.Day19 do
             when robot_index == @geode_index or
                    elem(robots, robot_index) < elem(max_robots, robot_index)
 
-  defguardp enough_time?(robot_index, minutes_left)
-            when (robot_index == @obsidian_index and minutes_left > 2) or
-                   (robot_index == @clay_index and minutes_left > 3) or
-                   minutes_left > 1
+  # defguardp enough_time?(robot_index, minutes_left)
+  #           when (robot_index == @obsidian_index and minutes_left > 2) or
+  #                  (robot_index == @clay_index and minutes_left > 3) or
+  #                  minutes_left > 1
 
   defp turn(bp, robot_to_build, robot_to_build_index, robot_to_build_costs) do
     bp
@@ -581,7 +581,7 @@ defmodule AdventOfCode.Y2022.Day19 do
   end
 
   def robot_build_options(%{
-        minutes_left: minutes_left,
+        minutes_left: _minutes_left,
         costs: costs,
         robots: robots,
         max_robots: max_robots

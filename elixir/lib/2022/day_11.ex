@@ -357,7 +357,7 @@ defmodule AdventOfCode.Y2022.Day11 do
           chooser_modulus: chooser_modulus,
           mod_zero_monkey: mod_zero_monkey,
           other_monkey: other_monkey
-        } = m
+        } = _m
       ) do
     new_level = operator_fun.(old_level, operand)
     new_level = if boredom_divisor == 1, do: new_level, else: div(new_level, boredom_divisor)
@@ -379,7 +379,7 @@ defmodule AdventOfCode.Y2022.Day11 do
       |> Enum.sort()
       |> Enum.product()
 
-    for round <- 1..n, id <- 0..max_index, reduce: monkeys do
+    for _round <- 1..n, id <- 0..max_index, reduce: monkeys do
       acc ->
         m = Map.fetch!(acc, id)
 

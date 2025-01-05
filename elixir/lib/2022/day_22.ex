@@ -28,7 +28,7 @@ defmodule AdventOfCode.Y2022.Day22 do
     )
   end
 
-  @cell ?.
+  # @cell ?.
   @wall ?#
 
   @right ">"
@@ -65,7 +65,7 @@ defmodule AdventOfCode.Y2022.Day22 do
     grid =
       for {row, y} <- grove |> Enum.with_index(1),
           {cell, x} <- Enum.with_index(row, 1),
-          [cell] != ' ',
+          [cell] != ~c" ",
           into: %{} do
         {{x, y}, cell}
       end
@@ -247,25 +247,25 @@ defmodule AdventOfCode.Y2022.Day22 do
   end
 
   defp next_position(%__MODULE__{row_dims: row_dims, position: {x0, y0}, heading: @right}) do
-    row_start..row_end = row_dims[y0]
+    row_start..row_end//1 = row_dims[y0]
 
     if x0 == row_end, do: {row_start, y0}, else: {x0 + 1, y0}
   end
 
   defp next_position(%__MODULE__{row_dims: row_dims, position: {x0, y0}, heading: @left}) do
-    row_start..row_end = row_dims[y0]
+    row_start..row_end//1 = row_dims[y0]
 
     if x0 == row_start, do: {row_end, y0}, else: {x0 - 1, y0}
   end
 
   defp next_position(%__MODULE__{col_dims: col_dims, position: {x0, y0}, heading: @up}) do
-    col_start..col_end = col_dims[x0]
+    col_start..col_end//1 = col_dims[x0]
 
     if y0 == col_start, do: {x0, col_end}, else: {x0, y0 - 1}
   end
 
   defp next_position(%__MODULE__{col_dims: col_dims, position: {x0, y0}, heading: @down}) do
-    col_start..col_end = col_dims[x0]
+    col_start..col_end//1 = col_dims[x0]
 
     if y0 == col_end, do: {x0, col_start}, else: {x0, y0 + 1}
   end

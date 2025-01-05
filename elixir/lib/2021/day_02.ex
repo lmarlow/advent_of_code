@@ -22,6 +22,9 @@ defmodule AdventOfCode.Y2021.Day02 do
 
   def run(data, part) when is_list(data), do: data |> solve(part)
 
+  def solve(data, 1), do: solve_1(data)
+  def solve(data, 2), do: solve_2(data)
+
   def parse(data) do
     data
     |> String.split("\n", trim: true)
@@ -67,7 +70,7 @@ defmodule AdventOfCode.Y2021.Day02 do
   Calculate the horizontal position and depth you would have after following the
   planned course.
   """
-  def solve(data, 1) do
+  def solve_1(data) do
     {x, y} =
       data
       |> Enum.reduce({0, 0}, fn
@@ -111,7 +114,7 @@ defmodule AdventOfCode.Y2021.Day02 do
   Using this new interpretation of the commands, calculate the horizontal position
   and depth you would have after following the planned course.
   """
-  def solve(data, 2) do
+  def solve_2(data) do
     {x, y, _aim} =
       data
       |> Enum.reduce({0, 0, 0}, fn

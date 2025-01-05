@@ -42,7 +42,7 @@ defmodule AdventOfCode.Y2020.Day02 do
 
   def solve(data, 2) do
     data
-    |> Enum.filter(fn {pos1, pos2, char, password} = policy ->
+    |> Enum.filter(fn {pos1, pos2, char, password} = _policy ->
       chars = String.graphemes(password)
 
       case [Enum.at(chars, pos1 - 1), Enum.at(chars, pos2 - 1)] do

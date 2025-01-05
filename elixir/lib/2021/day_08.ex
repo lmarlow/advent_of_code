@@ -102,16 +102,16 @@ defmodule AdventOfCode.Y2021.Day08 do
   end
 
   @canonical_map [
-                   'abcefg',
-                   'cf',
-                   'acdeg',
-                   'acdfg',
-                   'bcdf',
-                   'abdfg',
-                   'abdefg',
-                   'acf',
-                   'abcdefg',
-                   'abcdfg'
+                   ~c"abcefg",
+                   ~c"cf",
+                   ~c"acdeg",
+                   ~c"acdfg",
+                   ~c"bcdf",
+                   ~c"abdfg",
+                   ~c"abdefg",
+                   ~c"acf",
+                   ~c"abcdefg",
+                   ~c"abcdfg"
                  ]
                  |> Enum.map(&MapSet.new/1)
                  |> Enum.with_index()

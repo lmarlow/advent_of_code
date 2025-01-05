@@ -301,14 +301,14 @@ defmodule AdventOfCode.Y2022.Day23 do
   that rectangle contain?*
 
   """
-  def solve_1(data) do
+  def solve_1(_data) do
     {1, :not_implemented}
   end
 
   @doc """
   # Part 2
   """
-  def solve_2(data) do
+  def solve_2(_data) do
     {2, :not_implemented}
   end
 
