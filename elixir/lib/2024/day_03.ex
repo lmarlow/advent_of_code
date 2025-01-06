@@ -17,7 +17,12 @@ defmodule AdventOfCode.Y2024.Day03 do
       |> ignore(string(")"))
       |> tag(:mul)
 
+    enable = string("do()") |> replace(true) |> unwrap_and_tag(:enable)
+    disable = string("don't()") |> replace(false) |> unwrap_and_tag(:enable)
+
     defparsec(:mul_instruction, eventually(mul))
+
+    defparsec(:fancy_mul_instruction, eventually(choice([disable, enable, mul])))
   end
 
   @doc ~S"""
@@ -28,14 +33,7 @@ defmodule AdventOfCode.Y2024.Day03 do
   """
   def run(data \\ input!(), part)
 
-  def run(data, part) when is_binary(data), do: data |> parse() |> run(part)
-
-  def run(data, part) when is_list(data), do: data |> solve(part)
-
-  def parse(data) do
-    data
-    |> String.split("\n", trim: true)
-  end
+  def run(data, part), do: data |> solve(part)
 
   def solve(data, 1), do: solve_1(data)
   def solve(data, 2), do: solve_2(data)
@@ -83,34 +81,64 @@ defmodule AdventOfCode.Y2024.Day03 do
 
   """
   def solve_1(data) do
-    for line <- data, reduce: 0 do
-      acc ->
-        sum =
-          line
-          |> Parser.mul_instruction()
-          |> collect_instructions([])
-          |> Enum.map(fn [mul: [a, b]] -> a * b end)
-          |> Enum.sum()
-
-        sum + acc
-    end
+    data
+    |> Parser.mul_instruction()
+    |> collect_instructions([], &Parser.mul_instruction/1)
+    |> Enum.map(fn {:mul, [a, b]} -> a * b end)
+    |> Enum.sum()
   end
 
   @doc """
   # Part 2
+
+  As you scan through the corrupted memory, you notice that some of the
+  conditional statements are also still intact. If you handle some of the
+  uncorrupted conditional statements in the program, you might be able to get an
+  even more accurate result.
+
+  There are two new instructions you'll need to handle:
+
+  The do() instruction enables future mul instructions. The don't() instruction
+  disables future mul instructions. Only the most recent do() or don't()
+  instruction applies. At the beginning of the program, mul instructions are
+  enabled.
+
+  For example:
+
+  xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5)) This
+  corrupted memory is similar to the example from before, but this time the
+  mul(5,5) and mul(11,8) instructions are disabled because there is a don't()
+  instruction before them. The other mul instructions function normally,
+  including the one at the end that gets re-enabled by a do() instruction.
+
+  This time, the sum of the results is 48 (2*4 + 8*5).
+
+  Handle the new instructions; what do you get if you add up all of the results
+  of just the enabled multiplications?
   """
-  def solve_2(_data) do
-    {2, :not_implemented}
+  def solve_2(data) do
+    data
+    |> Parser.fancy_mul_instruction()
+    |> collect_instructions([], &Parser.fancy_mul_instruction/1)
+    |> Enum.reduce({true, 0}, fn
+      {:enable, true}, {_enable, sum} -> {true, sum}
+      {:enable, false}, {_enable, sum} -> {false, sum}
+      {:mul, [a, b]}, {true, sum} -> {true, sum + a * b}
+      _, {false, sum} -> {false, sum}
+    end)
+    |> elem(1)
   end
 
   # --- </Solution Functions> ---
-  defp collect_instructions({:ok, [mul: [_a, _b]] = args, rest, _context, _line, _column}, acc) do
+  defp collect_instructions({:ok, args, rest, _context, _line, _column}, acc, parsec) do
     rest
-    |> Parser.mul_instruction()
-    |> collect_instructions([args | acc])
+    |> parsec.()
+    |> collect_instructions([args | acc], parsec)
   end
 
-  defp collect_instructions(_no_match, acc) do
-    Enum.reverse(acc)
+  defp collect_instructions({:error, _error, _rest, _context, _line, _column}, acc, _parsec) do
+    acc
+    |> Enum.reverse()
+    |> List.flatten()
   end
 end
