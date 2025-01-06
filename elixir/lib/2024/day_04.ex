@@ -121,9 +121,61 @@ defmodule AdventOfCode.Y2024.Day04 do
 
   @doc """
   # Part 2
+
+  The Elf looks quizzically at you. Did you misunderstand the assignment?
+
+  Looking for the instructions, you flip over the word search to find that this
+  isn't actually an XMAS puzzle; it's an X-MAS puzzle in which you're supposed
+  to find two MAS in the shape of an X. One way to achieve that is like this:
+
+  M.S
+  .A.
+  M.S
+
+  Irrelevant characters have again been replaced with . in the above diagram.
+  Within the X, each MAS can be written forwards or backwards.
+
+  Here's the same example from before, but this time all of the X-MASes have
+  been kept instead:
+
+  .M.S......
+  ..A..MSMS.
+  .M.S.MAA..
+  ..A.ASMSM.
+  .M.S.M....
+  ..........
+  S.S.S.S.S.
+  .A.A.A.A..
+  M.M.M.M.M.
+  ..........
+  In this example, an X-MAS appears 9 times.
+
+  Flip the word search from the instructions back over to the word search side
+  and try again. How many times does an X-MAS appear?
   """
-  def solve_2(_data) do
-    {2, :not_implemented}
+  def solve_2(data) do
+    {letter_map, max_col, max_row} =
+      for {line, row} <- Enum.with_index(data),
+          {letter, column} <-
+            Enum.with_index(String.graphemes(line)),
+          reduce: {%{}, 0, 0} do
+        {letter_map, max_col, max_row} ->
+          {Map.put(letter_map, {column, row}, letter), max(max_col, column), max(max_row, row)}
+      end
+
+    for x <- 0..max_col,
+        y <- 0..max_row,
+        "A" == Map.get(letter_map, {x, y}),
+        nw = Map.get(letter_map, {x - 1, y - 1}),
+        ne = Map.get(letter_map, {x + 1, y - 1}),
+        sw = Map.get(letter_map, {x - 1, y + 1}),
+        se = Map.get(letter_map, {x + 1, y + 1}),
+        {nw, se} in [{"M", "S"}, {"S", "M"}],
+        {ne, sw} in [{"M", "S"}, {"S", "M"}],
+        reduce: 0 do
+      acc ->
+        acc + 1
+    end
   end
 
   # --- </Solution Functions> ---
