@@ -6,6 +6,20 @@ defmodule AdventOfCode.Y2024.Day03 do
   """
   use AdventOfCode.Helpers.InputReader, year: 2024, day: 3
 
+  defmodule Parser do
+    import NimbleParsec
+
+    mul =
+      ignore(string("mul("))
+      |> integer(min: 1, max: 3)
+      |> ignore(string(","))
+      |> integer(min: 1, max: 3)
+      |> ignore(string(")"))
+      |> tag(:mul)
+
+    defparsec(:mul_instruction, eventually(mul))
+  end
+
   @doc ~S"""
   Sample data:
 
@@ -68,8 +82,18 @@ defmodule AdventOfCode.Y2024.Day03 do
   you get if you add up all of the results of the multiplications?*
 
   """
-  def solve_1(_data) do
-    {1, :not_implemented}
+  def solve_1(data) do
+    for line <- data, reduce: 0 do
+      acc ->
+        sum =
+          line
+          |> Parser.mul_instruction()
+          |> collect_instructions([])
+          |> Enum.map(fn [mul: [a, b]] -> a * b end)
+          |> Enum.sum()
+
+        sum + acc
+    end
   end
 
   @doc """
@@ -80,4 +104,13 @@ defmodule AdventOfCode.Y2024.Day03 do
   end
 
   # --- </Solution Functions> ---
+  defp collect_instructions({:ok, [mul: [_a, _b]] = args, rest, _context, _line, _column}, acc) do
+    rest
+    |> Parser.mul_instruction()
+    |> collect_instructions([args | acc])
+  end
+
+  defp collect_instructions(_no_match, acc) do
+    Enum.reverse(acc)
+  end
 end
