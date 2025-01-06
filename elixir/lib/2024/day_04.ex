@@ -84,8 +84,39 @@ defmodule AdventOfCode.Y2024.Day04 do
   appear?*
 
   """
-  def solve_1(_data) do
-    {1, :not_implemented}
+  def solve_1(data) do
+    {letter_map, max_col, max_row} =
+      for {line, row} <- Enum.with_index(data),
+          {letter, column} <-
+            Enum.with_index(String.graphemes(line)),
+          reduce: {%{}, 0, 0} do
+        {letter_map, max_col, max_row} ->
+          {Map.put(letter_map, {column, row}, letter), max(max_col, column), max(max_row, row)}
+      end
+
+    deltas = [
+      _we_deltas = [{1, 0}, {2, 0}, {3, 0}],
+      _ew_deltas = [{-1, 0}, {-2, 0}, {-3, 0}],
+      _ns_deltas = [{0, 1}, {0, 2}, {0, 3}],
+      _sn_deltas = [{0, -1}, {0, -2}, {0, -3}],
+      _se_deltas = [{1, 1}, {2, 2}, {3, 3}],
+      _ne_deltas = [{1, -1}, {2, -2}, {3, -3}],
+      _sw_deltas = [{-1, 1}, {-2, 2}, {-3, 3}],
+      _nw_deltas = [{-1, -1}, {-2, -2}, {-3, -3}]
+    ]
+
+    for x <- 0..max_col,
+        y <- 0..max_row,
+        "X" == Map.get(letter_map, {x, y}),
+        [{m_dx, m_dy}, {a_dx, a_dy}, {s_dx, s_dy}] <- deltas,
+        m_xy = {x + m_dx, y + m_dy},
+        a_xy = {x + a_dx, y + a_dy},
+        s_xy = {x + s_dx, y + s_dy},
+        match?(%{^m_xy => "M", ^a_xy => "A", ^s_xy => "S"}, letter_map),
+        reduce: 0 do
+      acc ->
+        acc + 1
+    end
   end
 
   @doc """
