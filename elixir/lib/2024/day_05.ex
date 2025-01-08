@@ -156,33 +156,7 @@ defmodule AdventOfCode.Y2024.Day05 do
 
   """
   def solve_1(data) do
-    {rules, updates} =
-      for line <- data, reduce: {[], []} do
-        {rules, updates} ->
-          case line do
-            <<first::binary-size(2), "|", later::binary-size(2)>> ->
-              {[{String.to_integer(first), String.to_integer(later)} | rules], updates}
-
-            "" ->
-              {rules, updates}
-
-            line ->
-              update =
-                line |> String.split(",") |> Enum.map(&String.to_integer/1)
-
-              {rules, [update | updates]}
-          end
-      end
-
-    {rules, updates} = {Enum.reverse(rules), Enum.reverse(updates)}
-
-    before_rules =
-      rules
-      |> Enum.group_by(fn {before, _later} -> before end, fn {_before, later} -> later end)
-
-    later_rules =
-      rules
-      |> Enum.group_by(fn {_before, later} -> later end, fn {before, _later} -> before end)
+    {before_rules, later_rules, updates} = parse_data(data)
 
     for update <- updates, update_valid?(update, [], before_rules, later_rules), reduce: 0 do
       acc -> acc + Enum.at(update, div(Enum.count(update), 2))
@@ -209,33 +183,7 @@ defmodule AdventOfCode.Y2024.Day05 do
   add up the middle page numbers after correctly ordering just those updates?
   """
   def solve_2(data) do
-    {rules, updates} =
-      for line <- data, reduce: {[], []} do
-        {rules, updates} ->
-          case line do
-            <<first::binary-size(2), "|", later::binary-size(2)>> ->
-              {[{String.to_integer(first), String.to_integer(later)} | rules], updates}
-
-            "" ->
-              {rules, updates}
-
-            line ->
-              update =
-                line |> String.split(",") |> Enum.map(&String.to_integer/1)
-
-              {rules, [update | updates]}
-          end
-      end
-
-    {rules, updates} = {Enum.reverse(rules), Enum.reverse(updates)}
-
-    before_rules =
-      rules
-      |> Enum.group_by(fn {before, _later} -> before end, fn {_before, later} -> later end)
-
-    later_rules =
-      rules
-      |> Enum.group_by(fn {_before, later} -> later end, fn {before, _later} -> before end)
+    {before_rules, later_rules, updates} = parse_data(data)
 
     for update <- updates, not update_valid?(update, [], before_rules, later_rules), reduce: 0 do
       acc ->
@@ -254,5 +202,38 @@ defmodule AdventOfCode.Y2024.Day05 do
     else
       update_valid?(remaining_pages, [page | previous_pages], before_rules, later_rules)
     end
+  end
+
+  defp parse_data(data) do
+    {before_rules, later_rules, updates} = parse_data(data)
+
+    for line <- data, reduce: {[], []} do
+      {rules, updates} ->
+        case line do
+          <<first::binary-size(2), "|", later::binary-size(2)>> ->
+            {[{String.to_integer(first), String.to_integer(later)} | rules], updates}
+
+          "" ->
+            {rules, updates}
+
+          line ->
+            update =
+              line |> String.split(",") |> Enum.map(&String.to_integer/1)
+
+            {rules, [update | updates]}
+        end
+    end
+
+    {rules, updates} = {Enum.reverse(rules), Enum.reverse(updates)}
+
+    before_rules =
+      rules
+      |> Enum.group_by(fn {before, _later} -> before end, fn {_before, later} -> later end)
+
+    later_rules =
+      rules
+      |> Enum.group_by(fn {_before, later} -> later end, fn {before, _later} -> before end)
+
+    {before_rules, later_rules, updates}
   end
 end
