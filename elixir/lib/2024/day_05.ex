@@ -205,24 +205,23 @@ defmodule AdventOfCode.Y2024.Day05 do
   end
 
   defp parse_data(data) do
-    {before_rules, later_rules, updates} = parse_data(data)
+    {rules, updates} =
+      for line <- data, reduce: {[], []} do
+        {rules, updates} ->
+          case line do
+            <<first::binary-size(2), "|", later::binary-size(2)>> ->
+              {[{String.to_integer(first), String.to_integer(later)} | rules], updates}
 
-    for line <- data, reduce: {[], []} do
-      {rules, updates} ->
-        case line do
-          <<first::binary-size(2), "|", later::binary-size(2)>> ->
-            {[{String.to_integer(first), String.to_integer(later)} | rules], updates}
+            "" ->
+              {rules, updates}
 
-          "" ->
-            {rules, updates}
+            line ->
+              update =
+                line |> String.split(",") |> Enum.map(&String.to_integer/1)
 
-          line ->
-            update =
-              line |> String.split(",") |> Enum.map(&String.to_integer/1)
-
-            {rules, [update | updates]}
-        end
-    end
+              {rules, [update | updates]}
+          end
+      end
 
     {rules, updates} = {Enum.reverse(rules), Enum.reverse(updates)}
 
