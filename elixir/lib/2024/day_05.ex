@@ -155,8 +155,38 @@ defmodule AdventOfCode.Y2024.Day05 do
   updates?*
 
   """
-  def solve_1(_data) do
-    {1, :not_implemented}
+  def solve_1(data) do
+    {rules, updates} =
+      for line <- data, reduce: {[], []} do
+        {rules, updates} ->
+          case line do
+            <<first::binary-size(2), "|", later::binary-size(2)>> ->
+              {[{String.to_integer(first), String.to_integer(later)} | rules], updates}
+
+            "" ->
+              {rules, updates}
+
+            line ->
+              update =
+                line |> String.split(",") |> Enum.map(&String.to_integer/1)
+
+              {rules, [update | updates]}
+          end
+      end
+
+    {rules, updates} = {Enum.reverse(rules), Enum.reverse(updates)}
+
+    before_rules =
+      rules
+      |> Enum.group_by(fn {before, _later} -> before end, fn {_before, later} -> later end)
+
+    later_rules =
+      rules
+      |> Enum.group_by(fn {_before, later} -> later end, fn {before, _later} -> before end)
+
+    for update <- updates, update_valid?(update, [], before_rules, later_rules), reduce: 0 do
+      acc -> acc + Enum.at(update, div(Enum.count(update), 2))
+    end
   end
 
   @doc """
@@ -167,4 +197,14 @@ defmodule AdventOfCode.Y2024.Day05 do
   end
 
   # --- </Solution Functions> ---
+  defp update_valid?([], _previous_pages, _before_rules, _later_rules), do: true
+
+  defp update_valid?([page | remaining_pages], previous_pages, before_rules, later_rules) do
+    if Enum.any?(remaining_pages, &(page in Map.get(before_rules, &1, []))) or
+         Enum.any?(previous_pages, &(page in Map.get(later_rules, &1, []))) do
+      false
+    else
+      update_valid?(remaining_pages, [page | previous_pages], before_rules, later_rules)
+    end
+  end
 end
