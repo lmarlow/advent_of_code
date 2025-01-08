@@ -149,27 +149,12 @@ defmodule AdventOfCode.Y2024.Day06 do
 
   """
   def solve_1(data) do
-    map =
-      for {line, y} <- Enum.with_index(data),
-          {char, x} <- Enum.with_index(String.graphemes(line)),
-          into: %{},
-          do: {{x, y}, char}
+    {map, position, velocity} = parse_map(data)
 
-    # max_y = Enum.count(data) - 1
-    # max_x = Enum.count(String.graphemes(hd(data))) - 1
-
-    {start_position, direction} =
-      Enum.find(map, fn {_position, direction} -> direction in ["^", ">", "v", "<"] end)
-
-    {start_position, velocity(direction)}
-    |> Stream.unfold(fn {position, velocity} ->
-      with {new_position, new_velocity, <<_::binary>>} <- walk(map, position, velocity) do
-        {{new_position, new_velocity}, {new_position, new_velocity}}
-      else
-        _other -> nil
-      end
-    end)
-    |> Enum.map(&elem(&1, 0))
+    map
+    |> steps(position, velocity)
+    |> then(fn {pos_vel_steps, _loop_detected} -> pos_vel_steps end)
+    |> Enum.map(fn {pos, _vel} -> pos end)
     |> Enum.uniq()
     |> Enum.count()
   end
@@ -294,8 +279,25 @@ defmodule AdventOfCode.Y2024.Day06 do
   You need to get the guard stuck in a loop by adding a single new obstruction.
   How many different positions could you choose for this obstruction?
   """
-  def solve_2(_data) do
-    {2, :not_implemented}
+  def solve_2(data) do
+    {map, position, velocity} = parse_map(data)
+
+    [_starting_position | possible_blocking_positions] =
+      map
+      |> steps(position, velocity)
+      |> then(fn {pos_vel_steps, _loop_detected} -> pos_vel_steps end)
+      |> Enum.map(fn {pos, _vel} -> pos end)
+
+    for blocker_position <- Enum.uniq(possible_blocking_positions),
+        new_map = Map.put(map, blocker_position, "O"),
+        reduce: 0 do
+      acc ->
+        with {_, true} <- steps(new_map, position, velocity) do
+          acc + 1
+        else
+          _ -> acc
+        end
+    end
   end
 
   # --- </Solution Functions> ---
@@ -304,10 +306,10 @@ defmodule AdventOfCode.Y2024.Day06 do
   defp velocity("v"), do: {0, 1}
   defp velocity("<"), do: {-1, 0}
 
-  defp direction({0, -1}), do: "^"
-  defp direction({1, 0}), do: ">"
-  defp direction({0, 1}), do: "v"
-  defp direction({-1, 0}), do: "<"
+  # defp direction({0, -1}), do: "^"
+  # defp direction({1, 0}), do: ">"
+  # defp direction({0, 1}), do: "v"
+  # defp direction({-1, 0}), do: "<"
 
   defp turn({0, -1}), do: {1, 0}
   defp turn({1, 0}), do: {0, 1}
@@ -318,16 +320,55 @@ defmodule AdventOfCode.Y2024.Day06 do
     new_position = {x + dx, y + dy}
 
     case Map.get(map, new_position) do
-      "#" -> walk(map, position, turn(velocity))
+      obstacle when obstacle in ["#", "O"] -> walk(map, position, turn(velocity))
       spot -> {new_position, velocity, spot}
     end
   end
 
-  defp map_to_string(map, max_x, max_y) do
-    for y <- 0..max_y, into: "" do
-      line = for x <- 0..max_x, into: "", do: Map.get(map, {x, y}, ".")
+  # defp map_to_string(map) do
+  #   {xs, ys} = Enum.unzip(Map.keys(map))
+  #   max_x = Enum.max(xs)
+  #   max_y = Enum.max(ys)
+  #
+  #   for y <- 0..max_y, into: "" do
+  #     line = for x <- 0..max_x, into: "", do: Map.get(map, {x, y}, ".")
+  #
+  #     line <> "\n"
+  #   end
+  # end
 
-      line <> "\n"
-    end
+  defp parse_map(data) do
+    map =
+      for {line, y} <- Enum.with_index(data),
+          {char, x} <- Enum.with_index(String.graphemes(line)),
+          into: %{},
+          do: {{x, y}, char}
+
+    {start_position, direction} =
+      Enum.find(map, fn {_position, direction} -> direction in ["^", ">", "v", "<"] end)
+
+    {map, start_position, velocity(direction)}
+  end
+
+  defp steps(map, position, velocity) do
+    {steps, _uniq_pos_vels, loop_detected} =
+      {position, velocity}
+      |> Stream.unfold(fn {position, velocity} ->
+        with {new_position, new_velocity, <<_::binary>>} <- walk(map, position, velocity) do
+          {{new_position, new_velocity}, {new_position, new_velocity}}
+        else
+          _other -> nil
+        end
+      end)
+      |> Enum.reduce_while({[], MapSet.new(), false}, fn {_new_position, _new_velocity} = pos_vel,
+                                                         {steps, unique_pos_vels, _loop_detected} ->
+        if pos_vel in unique_pos_vels do
+          {:halt, {steps, unique_pos_vels, true}}
+        else
+          {:cont, {[pos_vel | steps], MapSet.put(unique_pos_vels, pos_vel), false}}
+        end
+      end)
+
+    {Enum.reverse(steps), loop_detected}
   end
 end

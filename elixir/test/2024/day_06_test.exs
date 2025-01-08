@@ -1,7 +1,8 @@
 defmodule AdventOfCode.Y2024.Day06Test do
   @moduledoc false
 
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+
   @moduletag :y2406
 
   alias AdventOfCode.Y2024.Day06, as: Solution
@@ -35,7 +36,7 @@ defmodule AdventOfCode.Y2024.Day06Test do
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 2162
     end
   end
 end
