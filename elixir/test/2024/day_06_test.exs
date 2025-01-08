@@ -31,7 +31,7 @@ defmodule AdventOfCode.Y2024.Day06Test do
 
   describe "part 2" do
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 6
     end
 
     test "input file" do
