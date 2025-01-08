@@ -208,8 +208,40 @@ defmodule AdventOfCode.Y2024.Day05 do
   Find the updates which are not in the correct order. What do you get if you
   add up the middle page numbers after correctly ordering just those updates?
   """
-  def solve_2(_data) do
-    {2, :not_implemented}
+  def solve_2(data) do
+    {rules, updates} =
+      for line <- data, reduce: {[], []} do
+        {rules, updates} ->
+          case line do
+            <<first::binary-size(2), "|", later::binary-size(2)>> ->
+              {[{String.to_integer(first), String.to_integer(later)} | rules], updates}
+
+            "" ->
+              {rules, updates}
+
+            line ->
+              update =
+                line |> String.split(",") |> Enum.map(&String.to_integer/1)
+
+              {rules, [update | updates]}
+          end
+      end
+
+    {rules, updates} = {Enum.reverse(rules), Enum.reverse(updates)}
+
+    before_rules =
+      rules
+      |> Enum.group_by(fn {before, _later} -> before end, fn {_before, later} -> later end)
+
+    later_rules =
+      rules
+      |> Enum.group_by(fn {_before, later} -> later end, fn {before, _later} -> before end)
+
+    for update <- updates, not update_valid?(update, [], before_rules, later_rules), reduce: 0 do
+      acc ->
+        sorted = Enum.sort(update, &(&2 in Map.get(before_rules, &1, [])))
+        acc + Enum.at(sorted, div(Enum.count(update), 2))
+    end
   end
 
   # --- </Solution Functions> ---

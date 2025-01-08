@@ -53,7 +53,7 @@ defmodule AdventOfCode.Y2024.Day05Test do
     end
 
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 6142
     end
   end
 end
