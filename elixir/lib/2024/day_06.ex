@@ -155,11 +155,23 @@ defmodule AdventOfCode.Y2024.Day06 do
           into: %{},
           do: {{x, y}, char}
 
-    max_y = Enum.count(data) - 1
-    max_x = Enum.count(String.graphemes(hd(data))) - 1
+    # max_y = Enum.count(data) - 1
+    # max_x = Enum.count(String.graphemes(hd(data))) - 1
 
-    {position, direction} =
-      Enum.find(map, fn {position, direction} -> direction in ["^", ">", "v", "<"] end)
+    {start_position, direction} =
+      Enum.find(map, fn {_position, direction} -> direction in ["^", ">", "v", "<"] end)
+
+    {start_position, velocity(direction)}
+    |> Stream.unfold(fn {position, velocity} ->
+      with {new_position, new_velocity, <<_::binary>>} <- walk(map, position, velocity) do
+        {{new_position, new_velocity}, {new_position, new_velocity}}
+      else
+        _other -> nil
+      end
+    end)
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.uniq()
+    |> Enum.count()
   end
 
   @doc """
@@ -170,4 +182,35 @@ defmodule AdventOfCode.Y2024.Day06 do
   end
 
   # --- </Solution Functions> ---
+  defp velocity("^"), do: {0, -1}
+  defp velocity(">"), do: {1, 0}
+  defp velocity("v"), do: {0, 1}
+  defp velocity("<"), do: {-1, 0}
+
+  defp direction({0, -1}), do: "^"
+  defp direction({1, 0}), do: ">"
+  defp direction({0, 1}), do: "v"
+  defp direction({-1, 0}), do: "<"
+
+  defp turn({0, -1}), do: {1, 0}
+  defp turn({1, 0}), do: {0, 1}
+  defp turn({0, 1}), do: {-1, 0}
+  defp turn({-1, 0}), do: {0, -1}
+
+  defp walk(map, {x, y} = position, {dx, dy} = velocity) do
+    new_position = {x + dx, y + dy}
+
+    case Map.get(map, new_position) do
+      "#" -> walk(map, position, turn(velocity))
+      spot -> {new_position, velocity, spot}
+    end
+  end
+
+  defp map_to_string(map, max_x, max_y) do
+    for y <- 0..max_y, into: "" do
+      line = for x <- 0..max_x, into: "", do: Map.get(map, {x, y}, ".")
+
+      line <> "\n"
+    end
+  end
 end
