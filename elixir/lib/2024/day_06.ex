@@ -282,22 +282,30 @@ defmodule AdventOfCode.Y2024.Day06 do
   def solve_2(data) do
     {map, position, velocity} = parse_map(data)
 
-    [_starting_position | possible_blocking_positions] =
+    steps =
       map
       |> steps(position, velocity)
       |> then(fn {pos_vel_steps, _loop_detected} -> pos_vel_steps end)
+
+    [_starting_position | possible_blocking_positions] =
+      steps
       |> Enum.map(fn {pos, _vel} -> pos end)
 
-    for blocker_position <- Enum.uniq(possible_blocking_positions),
+    for {blocker_position, idx} <-
+          Enum.uniq_by(Enum.with_index(possible_blocking_positions), fn {pos, _} -> pos end),
         new_map = Map.put(map, blocker_position, "O"),
-        reduce: 0 do
+        reduce: MapSet.new() do
       acc ->
-        with {_, true} <- steps(new_map, position, velocity) do
-          acc + 1
+        # skip ahead to just before the new blocker
+        {pos, vel} = Enum.at(steps, idx - 1)
+
+        with {_, true} <- steps(new_map, pos, vel) do
+          MapSet.put(acc, blocker_position)
         else
           _ -> acc
         end
     end
+    |> Enum.count()
   end
 
   # --- </Solution Functions> ---
