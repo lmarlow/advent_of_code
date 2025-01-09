@@ -90,8 +90,23 @@ defmodule AdventOfCode.Y2024.Day07 do
   calibration result?*
 
   """
-  def solve_1(_data) do
-    {1, :not_implemented}
+  def solve_1(lines) do
+    equations =
+      for line <- lines do
+        [result | operands] =
+          String.split(line, [":", " "], trim: true)
+          |> Enum.map(&String.to_integer/1)
+
+        {result, operands}
+      end
+
+    for equation <- equations, reduce: 0 do
+      acc ->
+        case solve(equation) do
+          {:ok, {result, _}} -> acc + result
+          _ -> acc
+        end
+    end
   end
 
   @doc """
@@ -102,4 +117,20 @@ defmodule AdventOfCode.Y2024.Day07 do
   end
 
   # --- </Solution Functions> ---
+  defp solve({result, operands}) do
+    solve(result, operands, [])
+  end
+
+  defp solve(result, [result], equation), do: {:ok, {result, Enum.reverse(equation)}}
+  defp solve(_result, [_other], _equation), do: :error
+  defp solve(result, [other | _rest], _invalid_equation) when other > result, do: :error
+
+  defp solve(result, [operand1, operand2 | rest], equation) do
+    with :error <-
+           solve(result, [operand1 + operand2 | rest], [operand2, "+", operand1 | equation]) do
+      solve(result, [operand1 * operand2 | rest], [operand2, "*", operand1 | equation])
+    else
+      other -> other
+    end
+  end
 end
