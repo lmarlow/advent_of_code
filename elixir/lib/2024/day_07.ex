@@ -102,7 +102,7 @@ defmodule AdventOfCode.Y2024.Day07 do
 
     for equation <- equations, reduce: 0 do
       acc ->
-        case solve(equation) do
+        case find_solution(equation, +: &Kernel.+/2, *: &Kernel.*/2) do
           {:ok, {result, _}} -> acc + result
           _ -> acc
         end
@@ -111,26 +111,79 @@ defmodule AdventOfCode.Y2024.Day07 do
 
   @doc """
   # Part 2
+
+  The engineers seem concerned; the total calibration result you gave them is
+  nowhere close to being within safety tolerances. Just then, you spot your
+  mistake: some well-hidden elephants are holding a third type of operator.
+
+  The concatenation operator (||) combines the digits from its left and right
+  inputs into a single number. For example, 12 || 345 would become 12345. All
+  operators are still evaluated left-to-right.
+
+  Now, apart from the three equations that could be made true using only
+  addition and multiplication, the above example has three more equations that
+  can be made true by inserting operators:
+
+  156: 15 6 can be made true through a single concatenation: 15 || 6 = 156.
+  7290: 6 8 6 15 can be made true using 6 * 8 || 6 * 15.
+  192: 17 8 14 can be made true using 17 || 8 + 14.
+
+  Adding up all six test values (the three that could be made before using only
+  + and * plus the new three that can now be made by also using ||) produces
+  the new total calibration result of 11387.
+
+  Using your new knowledge of elephant hiding spots, determine which equations
+  could possibly be true. What is their total calibration result?
   """
-  def solve_2(_data) do
-    {2, :not_implemented}
+  def solve_2(lines) do
+    equations =
+      for line <- lines do
+        [result | operands] =
+          String.split(line, [":", " "], trim: true)
+          |> Enum.map(&String.to_integer/1)
+
+        {result, operands}
+      end
+
+    for equation <- equations, reduce: 0 do
+      acc ->
+        case find_solution(equation, +: &Kernel.+/2, *: &Kernel.*/2, ||: &concat_num/2) do
+          {:ok, {result, _}} -> acc + result
+          _ -> acc
+        end
+    end
   end
 
   # --- </Solution Functions> ---
-  defp solve({result, operands}) do
-    solve(result, operands, [])
+  defp find_solution({result, operands}, operators) do
+    find_solution(result, operands, [], operators)
   end
 
-  defp solve(result, [result], equation), do: {:ok, {result, Enum.reverse(equation)}}
-  defp solve(_result, [_other], _equation), do: :error
-  defp solve(result, [other | _rest], _invalid_equation) when other > result, do: :error
+  defp find_solution(result, [result], equation, _operators),
+    do: {:ok, {result, Enum.reverse(equation)}}
 
-  defp solve(result, [operand1, operand2 | rest], equation) do
-    with :error <-
-           solve(result, [operand1 + operand2 | rest], [operand2, "+", operand1 | equation]) do
-      solve(result, [operand1 * operand2 | rest], [operand2, "*", operand1 | equation])
-    else
-      other -> other
-    end
+  defp find_solution(_result, [_other], _equation, _operators), do: :error
+
+  defp find_solution(result, [other | _rest], _invalid_equation, _operators) when other > result,
+    do: :error
+
+  defp find_solution(result, [operand1, operand2 | rest], equation, operators) do
+    Enum.find_value(operators, fn {op_char, op_fn} ->
+      case find_solution(
+             result,
+             [op_fn.(operand1, operand2) | rest],
+             [
+               operand2,
+               {op_char, op_fn},
+               operand1 | equation
+             ],
+             operators
+           ) do
+        :error -> false
+        other -> other
+      end
+    end)
   end
+
+  defp concat_num(a, b), do: String.to_integer("#{a}#{b}")
 end
