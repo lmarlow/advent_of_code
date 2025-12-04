@@ -109,10 +109,79 @@ defmodule AdventOfCode.Y2025.Day03 do
 
   @doc """
   # Part 2
+
+  The escalator doesn't move. The Elf explains that it probably needs more
+  joltage to overcome the static friction of the system and hits the big red
+  "joltage limit safety override" button. You lose count of the number of times
+  she needs to confirm "yes, I'm sure" and decorate the lobby a bit while you
+  wait.
+
+  Now, you need to make the largest joltage by turning on exactly twelve
+  batteries within each bank.
+
+  The joltage output for the bank is still the number formed by the digits of
+  the batteries you've turned on; the only difference is that now there will be
+  12 digits in each bank's joltage output instead of two.
+
+  Consider again the example from before:
+
+  987654321111111
+  811111111111119
+  234234234234278
+  818181911112111
+
+  Now, the joltages are much larger:
+
+    - In 987654321111111, the largest joltage can be found by turning on
+      everything except some 1s at the end to produce 987654321111.
+    - In the digit sequence 811111111111119, the largest joltage can be found by
+      turning on everything except some 1s, producing 811111111119.
+    - In 234234234234278, the largest joltage can be found by turning on
+      everything except a 2 battery, a 3 battery, and another 2 battery near the
+      start to produce 434234234278.
+    - In 818181911112111, the joltage 888911112111 is produced by turning on
+      everything except some 1s near the front.
+
+  The total output joltage is now much larger: 987654321111 + 811111111119 +
+  434234234278 + 888911112111 = 3121910778619.
+  
   """
-  def solve_2(_data) do
-    {2, :not_implemented}
+  def solve_2(data) do
+    digits_needed = 12
+
+    data
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.map(&Integer.digits/1)
+    |> Enum.map(&max_joltage(&1, digits_needed))
+    |> Enum.sum()
   end
 
   # --- </Solution Functions> ---
+  #
+  defp max_joltage(battery_bank, digits_left) do
+    battery_bank
+    |> Enum.reverse()
+    |> Enum.with_index(1)
+    |> Enum.reverse()
+    |> max_joltage(digits_left, [])
+  end
+
+  defp max_joltage(_battery_bank_with_indexes, 0, selected_digits) do
+    selected_digits
+    |> Enum.reverse()
+    |> Integer.undigits()
+  end
+
+  defp max_joltage(battery_bank_with_indexes, digits_left, selected_digits) do
+    {digit, index} =
+      Enum.max_by(battery_bank_with_indexes, fn
+        {_digit, index} when index < digits_left -> 0
+        {digit, _index} -> digit
+      end)
+
+    {_skip, rest} =
+      Enum.split_while(battery_bank_with_indexes, fn {_d, i} -> i >= index end)
+
+    max_joltage(rest, digits_left - 1, [digit | selected_digits])
+  end
 end
