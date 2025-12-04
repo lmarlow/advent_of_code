@@ -90,20 +90,45 @@ defmodule AdventOfCode.Y2025.Day02 do
   """
   def solve_1(data) do
     data
-    |> Enum.flat_map(&invalid_ids/1)
+    |> Enum.flat_map(&invalid_ids_part_1/1)
     |> Enum.sum()
   end
 
   @doc """
   # Part 2
+
+  The clerk quickly discovers that there are still invalid IDs in the ranges in
+  your list. Maybe the young Elf was doing other silly patterns as well?
+
+  Now, an ID is invalid if it is made only of some sequence of digits repeated
+  at least twice. So, 12341234 (1234 two times), 123123123 (123 three times),
+  1212121212 (12 five times), and 1111111 (1 seven times) are all invalid IDs.
+
+  From the same example as before:
+
+  11-22 still has two invalid IDs, 11 and 22.
+  95-115 now has two invalid IDs, 99 and 111.
+  998-1012 now has two invalid IDs, 999 and 1010.
+  1188511880-1188511890 still has one invalid ID, 1188511885.
+  222220-222224 still has one invalid ID, 222222.
+  1698522-1698528 still contains no invalid IDs.
+  446443-446449 still has one invalid ID, 446446.
+  38593856-38593862 still has one invalid ID, 38593859.
+  565653-565659 now has one invalid ID, 565656.
+  824824821-824824827 now has one invalid ID, 824824824.
+  2121212118-2121212124 now has one invalid ID, 2121212121.
+  Adding up all the invalid IDs in this example produces 4174379265.
+
   """
-  def solve_2(_data) do
-    {2, :not_implemented}
+  def solve_2(data) do
+    data
+    |> Enum.flat_map(&invalid_ids_part_2/1)
+    |> Enum.sum()
   end
 
   # --- </Solution Functions> ---
 
-  defp invalid_ids(range_str) do
+  defp invalid_ids_part_1(range_str) do
     [first, last] = range_str |> String.split("-") |> Enum.map(&String.to_integer/1)
 
     for n <- first..last,
@@ -112,5 +137,27 @@ defmodule AdventOfCode.Y2025.Day02 do
         beginning == ending do
       n
     end
+  end
+
+  defp invalid_ids_part_2(range_str) do
+    [first, last] = range_str |> String.split("-") |> Enum.map(&String.to_integer/1)
+
+    for n <- first..last, is_invalid_part_2(n) do
+      n
+    end
+  end
+
+  defp is_invalid_part_2(n) when n < 10, do: false
+
+  defp is_invalid_part_2(n) do
+    digits = Integer.digits(n)
+
+    chunk_lengths =
+      1..div(length(digits), 2) |> Enum.filter(&(Integer.mod(length(digits), &1) == 0))
+
+    Enum.any?(chunk_lengths, fn count ->
+      [first | rest] = digits |> Enum.chunk_every(count)
+      Enum.all?(rest, &(&1 == first))
+    end)
   end
 end
