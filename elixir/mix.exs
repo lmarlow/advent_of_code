@@ -25,7 +25,7 @@ defmodule AdventOfCode.MixProject do
       {:nx, github: "elixir-nx/nx", sparse: "nx"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:req, "~> 0.5"},
-      {:floki, "~> 0.34.0"},
+      {:floki, "~> 0.34"},
       {:jason, "~> 1.2"},
       {:pandex, "~> 0.2"}
     ]
