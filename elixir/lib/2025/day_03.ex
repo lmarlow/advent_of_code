@@ -144,7 +144,7 @@ defmodule AdventOfCode.Y2025.Day03 do
 
   The total output joltage is now much larger: 987654321111 + 811111111119 +
   434234234278 + 888911112111 = 3121910778619.
-  
+
   """
   def solve_2(data) do
     digits_needed = 12
