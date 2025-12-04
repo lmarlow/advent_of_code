@@ -21,6 +21,7 @@ defmodule AdventOfCode.Y2025.Day02 do
   def parse(data) do
     data
     |> String.split("\n", trim: true)
+    |> Enum.flat_map(&String.split(&1, ","))
   end
 
   def solve(data, 1), do: solve_1(data)
@@ -87,8 +88,10 @@ defmodule AdventOfCode.Y2025.Day02 do
   *What do you get if you add up all of the invalid IDs?*
 
   """
-  def solve_1(_data) do
-    {1, :not_implemented}
+  def solve_1(data) do
+    data
+    |> Enum.flat_map(&invalid_ids/1)
+    |> Enum.sum()
   end
 
   @doc """
@@ -99,4 +102,15 @@ defmodule AdventOfCode.Y2025.Day02 do
   end
 
   # --- </Solution Functions> ---
+
+  defp invalid_ids(range_str) do
+    [first, last] = range_str |> String.split("-") |> Enum.map(&String.to_integer/1)
+
+    for n <- first..last,
+        split_index = n |> to_string() |> byte_size() |> div(2),
+        {beginning, ending} = String.split_at(to_string(n), split_index),
+        beginning == ending do
+      n
+    end
+  end
 end
