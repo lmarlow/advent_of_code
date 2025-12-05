@@ -102,10 +102,51 @@ defmodule AdventOfCode.Y2025.Day05 do
   @doc """
   # Part 2
 
-  PROBLEM_TEXT_PART2
+  The Elves start bringing their spoiled inventory to the trash chute at
+  the back of the kitchen.
+
+  So that they can stop bugging you when they get new inventory, the Elves
+  would like to know *all* of the IDs that the *fresh ingredient ID
+  ranges* consider to be *fresh*. An ingredient ID is still considered
+  fresh if it is in any range.
+
+  Now, the second section of the database (the available ingredient IDs)
+  is irrelevant. Here are the fresh ingredient ID ranges from the above
+  example:
+
+    3-5
+    10-14
+    16-20
+    12-18
+
+  The ingredient IDs that these ranges consider to be fresh are `3`, `4`,
+  `5`, `10`, `11`, `12`, `13`, `14`, `15`, `16`, `17`, `18`, `19`, and
+  `20`. So, in this example, the fresh ingredient ID ranges consider a
+  total of *`14`* ingredient IDs to be fresh.
+
+  Process the database file again. *How many ingredient IDs are considered
+  to be fresh according to the fresh ingredient ID ranges?*
+
   """
   def solve_2(data) do
-    {:error, data}
+    data
+    |> Enum.take_while(&String.contains?(&1, "-"))
+    |> Enum.map(&String.split(&1, "-"))
+    |> Enum.map(&Enum.map(&1, fn s -> String.to_integer(s) end))
+    |> Enum.map(fn [first, last] -> first..last end)
+    |> Enum.reduce([], fn range, consolidated_ranges ->
+      {disjoint_ranges, overlapping_ranges} =
+        Enum.split_with(consolidated_ranges, &Range.disjoint?(&1, range))
+
+      merged_range =
+        for r <- overlapping_ranges, reduce: range do
+          first..last ->
+            min(first, r.first)..max(last, r.last)
+        end
+
+      [merged_range | disjoint_ranges]
+    end)
+    |> Enum.sum_by(&Enum.count/1)
   end
 
   # --- </Solution Functions> ---

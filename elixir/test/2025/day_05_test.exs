@@ -38,12 +38,12 @@ defmodule AdventOfCode.Y2025.Day05Test do
     @describetag :y2505p2
     @tag :y2505p2ex
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 14
     end
 
     @tag :y2505p2input
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 344_323_629_240_733
     end
   end
 end
