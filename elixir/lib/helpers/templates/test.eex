@@ -2,6 +2,7 @@ defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(to_string(day), 2,
   @moduledoc false
 
   use ExUnit.Case
+  @moduletag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %>
   @moduletag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>
 
   alias AdventOfCode.Y<%= year  %>.Day<%= String.pad_leading(to_string(day), 2, "0") %>, as: Solution
@@ -10,20 +11,26 @@ defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(to_string(day), 2,
   """
 
   describe "part 1" do
+    @describetag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p1
+    @tag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p1ex
     test "example" do
       assert Solution.run(@sample_data, 1) == nil
     end
 
+    @tag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p1input
     test "input file" do
       assert Solution.run(1) == nil
     end
   end
 
   describe "part 2" do
+    @describetag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p2
+    @tag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p2ex
     test "example" do
       assert Solution.run(@sample_data, 2) == nil
     end
 
+    @tag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p2input
     test "input file" do
       assert Solution.run(2) == nil
     end
