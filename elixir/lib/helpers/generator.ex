@@ -6,6 +6,7 @@ defmodule AdventOfCode.Helpers.Generator do
   @code_template "lib/helpers/templates/code.eex"
   @test_template "lib/helpers/templates/test.eex"
   @livebook_template "lib/helpers/templates/livebook.eex"
+  @part2_replace_text "PROBLEM_TEXT_PART2"
 
   @doc """
   Generates the necessary artifacts for solving a day's problem.
@@ -20,6 +21,7 @@ defmodule AdventOfCode.Helpers.Generator do
   def run({year, day}) do
     _ = Application.ensure_all_started(:req)
 
+    {:ok, date} = Date.new(year, 12, day)
     input_dir = Path.join("priv", "input_files")
     build_priv_dir = Path.join(:code.priv_dir(:advent_of_code), "input_files")
     code_dir = Path.join("lib", to_string(year))
@@ -29,10 +31,10 @@ defmodule AdventOfCode.Helpers.Generator do
       File.mkdir_p!(dir)
     end
 
+    input_filename = Calendar.strftime(date, "%Y_%d.txt")
     # Write the input data at `priv/input_files`
-    input_file_path = Path.join(input_dir, "#{year}_#{zero_padded(day)}.txt")
-
-    build_priv_file_path = Path.join(build_priv_dir, "#{year}_#{zero_padded(day)}.txt")
+    input_file_path = Path.join(input_dir, input_filename)
+    build_priv_file_path = Path.join(build_priv_dir, input_filename)
 
     input_file =
       input_file_path
@@ -42,46 +44,110 @@ defmodule AdventOfCode.Helpers.Generator do
 
     day_doc = get_day_doc(year, day)
     title = get_title(day_doc)
-    problem_text = get_problem_text(day_doc)
+    problem_text_part1 = get_problem_text(day_doc, [])
+    problem_text_part2 = get_problem_text(day_doc, [{"id", "part2"}]) || @part2_replace_text
+    example_data = get_example_data(day_doc)
+
+    [code_filename, test_filename, livebook_filename] =
+      for suffix <- ~w[.ex _test.exs .livemd] do
+        Calendar.strftime(date, "day_%d") <> suffix
+      end
 
     # Write code files at `lib/<year>/day_<day>.ex`
     code_content =
       @code_template
-      |> EEx.eval_file(day: day, year: year, title: title, problem_text: problem_text)
+      |> EEx.eval_file(
+        day: day,
+        year: year,
+        title: title,
+        problem_text_part1: problem_text_part1,
+        problem_text_part2: problem_text_part2,
+        date: date
+      )
+
+    code_path = Path.join(code_dir, code_filename)
 
     code_file =
-      code_dir
-      |> Path.join("day_#{zero_padded(day)}.ex")
+      code_path
       |> create_file(code_content)
 
     # Write test files at `test/<year>/day_<year>_test.exs`
     test_content =
       @test_template
-      |> EEx.eval_file(day: day, year: year)
+      |> EEx.eval_file(day: day, year: year, date: date, example_data: example_data)
+
+    test_path = Path.join(test_dir, test_filename)
 
     test_file =
-      test_dir
-      |> Path.join("day_#{zero_padded(day)}_test.exs")
+      test_path
       |> create_file(test_content)
 
     # Write code files at `lib/<year>/day_<day>.ex`
     livebook_content =
       @livebook_template
-      |> EEx.eval_file(day: day, year: year, title: title, problem_text: problem_text)
+      |> EEx.eval_file(
+        day: day,
+        year: year,
+        title: title,
+        problem_text_part1: problem_text_part1,
+        problem_text_part2: problem_text_part2,
+        date: date
+      )
+
+    livebook_path = Path.join(code_dir, livebook_filename)
 
     livebook_file =
-      code_dir
-      |> Path.join("day_#{zero_padded(day)}.livemd")
+      livebook_path
       |> create_file(livebook_content)
 
+    System.shell("mix format -- #{code_path} #{test_path}")
+
     "INPUT: #{input_file}\tCODE: #{code_file}\tTEST: #{test_file}\tLIVEBOOK: #{livebook_file}\n"
+  end
+
+  def part2({year, day}) do
+    _ = Application.ensure_all_started(:req)
+
+    part2_text =
+      year
+      |> get_day_doc(day)
+      |> get_problem_text([{"id", "part2"}])
+
+    if part2_text do
+      {:ok, date} = Date.new(year, 12, day)
+      code_dir = Path.join("lib", to_string(year))
+
+      [code_filename, _test_filename, livebook_filename] =
+        for suffix <- ~w[.ex _test.exs .livemd] do
+          Calendar.strftime(date, "day_%d") <> suffix
+        end
+
+      code_path = Path.join(code_dir, code_filename)
+      livebook_path = Path.join(code_dir, livebook_filename)
+
+      for path <- [code_path, livebook_path] do
+        with {:ok, content} <- File.read(path),
+             updated_content = String.replace(content, @part2_replace_text, part2_text),
+             true <- Mix.shell().yes?("Overwrite #{path}?"),
+             :ok <- File.write(path, updated_content) do
+          System.shell("mix format -- #{path}")
+          Mix.shell().info("Updated part 2 text in #{path}")
+        else
+          false ->
+            Mix.shell().info("Skipped #{path}")
+
+          other ->
+            Mix.shell().error(inspect(other))
+        end
+      end
+    end
   end
 
   defp create_file(path, content) do
     Mix.Generator.create_file(path, content)
   end
 
-  defp fetch_cookie(year, day) do
+  defp get_day_input(year, day) do
     url = "https://adventofcode.com/#{year}/day/#{day}/input"
 
     with {:ok, %{status: 200, body: body}} <-
@@ -91,7 +157,7 @@ defmodule AdventOfCode.Helpers.Generator do
   end
 
   defp create_input_file(path, year, day) do
-    with {:ok, data} <- fetch_cookie(year, day) do
+    with {:ok, data} <- get_day_input(year, day) do
       Mix.Generator.create_file(path, data)
     end
   end
@@ -99,37 +165,52 @@ defmodule AdventOfCode.Helpers.Generator do
   def get_day_doc(year, day) do
     url = "https://adventofcode.com/#{year}/day/#{day}"
 
-    with {:ok, %{status: 200, body: body}} <- Req.get(url),
-         {:ok, parsed_body} <- Floki.parse_document!(body) do
+    with {:ok, %{status: 200, body: body}} <-
+           Req.get(url, headers: [{"cookie", "session=#{System.get_env("COOKIE", "")}"}]),
+         {:ok, parsed_body} <- Floki.parse_document(body) do
       parsed_body
     end
   end
 
   defp get_title(doc) do
     doc
-    |> Floki.find("h2")
-    |> then(fn [{"h2", [], [title | _]}] ->
-      title |> String.trim("-") |> String.trim()
+    |> Floki.find("article.day-desc h2")
+    |> Enum.find_value("", fn
+      {"h2", [], [title | _]} ->
+        title |> String.trim("-") |> String.trim()
+
+      _other ->
+        false
     end)
-  rescue
-    _ -> ""
   end
 
-  defp get_problem_text(doc) do
-    case Floki.find(doc, "article") do
-      [{"article", _, [{"h2", _, _} | problem_doc]}] -> problem_doc
-      other -> other
+  defp get_problem_text(doc, h2_attrs) do
+    doc
+    |> Floki.find("article.day-desc")
+    |> Enum.find_value(fn
+      {"article", _, [{"h2", ^h2_attrs, _} | problem_doc]} ->
+        problem_doc
+        |> Floki.raw_html()
+        |> Pandex.html_to_gfm()
+        |> then(fn
+          {:ok, markdown} ->
+            markdown
+
+          _ ->
+            ""
+        end)
+
+      _other ->
+        false
+    end)
+  end
+
+  defp get_example_data(doc) do
+    with [{"code", _, [example]} | _others] when is_binary(example) <-
+           Floki.find(doc, "main article pre code") do
+      String.trim(example)
+    else
+      _other -> ""
     end
-    |> Floki.raw_html()
-    |> Pandex.html_to_gfm()
-    |> then(fn
-      {:ok, markdown} ->
-        markdown
-
-      _ ->
-        ""
-    end)
   end
-
-  defp zero_padded(day), do: day |> to_string() |> String.pad_leading(2, "0")
 end

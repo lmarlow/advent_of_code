@@ -1,6 +1,6 @@
 <!-- vim: syntax=markdown -->
 
-# Advent of Code <%= year %>-<%= String.pad_leading(to_string(day), 2, "0") %>
+# Advent of Code <%= Calendar.strftime(date, "%Y-%d") %> %>
 
 ```elixir
 Mix.install([
@@ -11,15 +11,15 @@ Mix.install([
   {:advent_of_code, path: "Code/mine/advent_of_code/elixir"}
 ])
 
-alias AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(to_string(day), 2, "0") %>, as: Day
+alias AdventOfCode.<%= Calendar.strftime(date, "Y%Y.Day%d") %>, as: Day
 ```
 
 ##  <%= title %>
 
 Problem Link: https://adventofcode.com/<%= year %>/day/<%= day %>
 
-<%= if day > 1 do %>[Previous Day](day_<%= String.pad_leading(to_string(day - 1), 2, "0") %>.livemd)<% end %>
-<%= if day < 24 do %>[Next Day](day_<%= String.pad_leading(to_string(day + 1), 2, "0") %>.livemd)<% end %>
+<%= if day > 1 do %>[Previous Day](<%= Calendar.strftime(Date.shift(date, day: -1), "day_%d.livemd") %><% end %>)
+<%= if day < 24 do %>[Next Day](<%= Calendar.strftime(Date.shift(date, day: 1), "day_%d.livemd") %><% end %>)
 
 ## Input Data
 
@@ -38,7 +38,7 @@ lines =
 
 ## Part 1
 
-<%= problem_text %>
+<%= problem_text_part1 %>
 
 <!-- livebook:{"reevaluate_automatically":true} -->
 
@@ -47,6 +47,8 @@ lines =
 ```
 
 ## Part 2
+
+<%= problem_text_part2 %>
 
 <!-- livebook:{"reevaluate_automatically":true} -->
 

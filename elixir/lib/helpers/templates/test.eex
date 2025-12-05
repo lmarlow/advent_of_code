@@ -1,38 +1,28 @@
-defmodule AdventOfCode.Y<%= year %>.Day<%= String.pad_leading(to_string(day), 2, "0") %>Test do
+defmodule AdventOfCode.<%= Calendar.strftime(date, "Y%Y.Day%d") %>Test do
   @moduledoc false
 
   use ExUnit.Case
-  @moduletag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %>
-  @moduletag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>
+  @moduletag :<%= Calendar.strftime(date, "y%y") %>
+  @moduletag :<%= Calendar.strftime(date, "y%y%d") %>
 
-  alias AdventOfCode.Y<%= year  %>.Day<%= String.pad_leading(to_string(day), 2, "0") %>, as: Solution
+  alias AdventOfCode.<%= Calendar.strftime(date, "Y%Y.Day%d") %>, as: Solution
 
   @sample_data ~S"""
+  <%= example_data %>
   """
 
-  describe "part 1" do
-    @describetag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p1
-    @tag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p1ex
+  <%= for part <- 1..2 do %>
+  describe "part <%= part %>" do
+    @describetag :<%= Calendar.strftime(date, "y%y%dp#{part}") %>
+    @tag :<%= Calendar.strftime(date, "y%y%dp#{part}ex") %>
     test "example" do
-      assert Solution.run(@sample_data, 1) == nil
+      assert Solution.run(@sample_data, <%= part %>) == nil
     end
 
-    @tag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p1input
+    @tag :<%= Calendar.strftime(date, "y%y%dp#{part}input") %>
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(<%= part %>) == nil
     end
   end
-
-  describe "part 2" do
-    @describetag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p2
-    @tag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p2ex
-    test "example" do
-      assert Solution.run(@sample_data, 2) == nil
-    end
-
-    @tag :y<%= to_string(year) |> String.split_at(2) |> elem(1) %><%= String.pad_leading(to_string(day), 2, "0") %>p2input
-    test "input file" do
-      assert Solution.run(2) == nil
-    end
-  end
+  <% end %>
 end
