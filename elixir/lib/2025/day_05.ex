@@ -140,7 +140,7 @@ defmodule AdventOfCode.Y2025.Day05 do
 
       merged_range =
         for r <- overlapping_ranges, reduce: range do
-          first..last ->
+          first..last//_ ->
             min(first, r.first)..max(last, r.last)
         end
 
