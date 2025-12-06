@@ -22,25 +22,12 @@ defmodule AdventOfCode.Helpers.Generator do
     _ = Application.ensure_all_started(:req)
 
     {:ok, date} = Date.new(year, 12, day)
-    input_dir = Path.join("priv", "input_files")
-    build_priv_dir = Path.join(:code.priv_dir(:advent_of_code), "input_files")
+
+    input_file = create_input_file(date)
+
     code_dir = Path.join("lib", to_string(year))
     test_dir = Path.join("test", to_string(year))
-
-    for dir <- [input_dir, build_priv_dir, code_dir, test_dir], not File.dir?(dir) do
-      File.mkdir_p!(dir)
-    end
-
-    input_filename = Calendar.strftime(date, "%Y_%d.txt")
-    # Write the input data at `priv/input_files`
-    input_file_path = Path.join(input_dir, input_filename)
-    build_priv_file_path = Path.join(build_priv_dir, input_filename)
-
-    input_file =
-      input_file_path
-      |> create_input_file(year, day)
-
-    Mix.Generator.copy_file(input_file_path, build_priv_file_path)
+    ensure_directories([code_dir, test_dir])
 
     day_doc = get_day_doc(year, day)
     title = get_title(day_doc)
@@ -69,7 +56,7 @@ defmodule AdventOfCode.Helpers.Generator do
 
     code_file =
       code_path
-      |> create_file(code_content)
+      |> Mix.Generator.create_file(code_content)
 
     # Write test files at `test/<year>/day_<year>_test.exs`
     test_content =
@@ -80,7 +67,7 @@ defmodule AdventOfCode.Helpers.Generator do
 
     test_file =
       test_path
-      |> create_file(test_content)
+      |> Mix.Generator.create_file(test_content)
 
     # Write code files at `lib/<year>/day_<day>.ex`
     livebook_content =
@@ -98,7 +85,7 @@ defmodule AdventOfCode.Helpers.Generator do
 
     livebook_file =
       livebook_path
-      |> create_file(livebook_content)
+      |> Mix.Generator.create_file(livebook_content)
 
     System.shell("mix format -- #{code_path} #{test_path}")
 
@@ -143,10 +130,6 @@ defmodule AdventOfCode.Helpers.Generator do
     end
   end
 
-  defp create_file(path, content) do
-    Mix.Generator.create_file(path, content)
-  end
-
   defp get_day_input(year, day) do
     url = "https://adventofcode.com/#{year}/day/#{day}/input"
 
@@ -156,9 +139,27 @@ defmodule AdventOfCode.Helpers.Generator do
     end
   end
 
-  defp create_input_file(path, year, day) do
-    with {:ok, data} <- get_day_input(year, day) do
-      Mix.Generator.create_file(path, data)
+  defp input_filename(date), do: Calendar.strftime(date, "%Y_%d.txt")
+
+  def input_file_path(date),
+    do: Path.join([input_dir(), to_string(date.year), input_filename(date)])
+
+  defp input_dir, do: Path.join("priv", "input_files")
+
+  def create_input_file(date) do
+    input_dir = input_dir()
+    build_priv_dir = Path.join(:code.priv_dir(:advent_of_code), "input_files")
+    ensure_directories([input_dir, build_priv_dir])
+
+    # Write the input data at `priv/input_files`
+    input_file_path = input_file_path(date)
+    build_priv_file_path = String.replace(input_file_path, input_dir, build_priv_dir)
+
+    with {:ok, data} <- get_day_input(date.year, date.day),
+         true <- Mix.Generator.create_file(input_file_path, data) do
+      Mix.Generator.copy_file(input_file_path, build_priv_file_path)
+    else
+      _other -> false
     end
   end
 
@@ -211,6 +212,12 @@ defmodule AdventOfCode.Helpers.Generator do
       String.trim(example)
     else
       _other -> ""
+    end
+  end
+
+  defp ensure_directories(paths) do
+    for dir <- paths, not File.dir?(dir) do
+      File.mkdir_p!(dir)
     end
   end
 end
