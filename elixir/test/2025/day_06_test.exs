@@ -9,9 +9,9 @@ defmodule AdventOfCode.Y2025.Day06Test do
 
   @sample_data ~S"""
   123 328  51 64 
-  45 64  387 23 
-  6 98  215 314
-  *   +   *   +
+   45 64  387 23 
+    6 98  215 314
+  *   +   *   +  
   """
 
   describe "part 1" do
@@ -36,7 +36,7 @@ defmodule AdventOfCode.Y2025.Day06Test do
 
     @tag :y2506p2input
     test "input file" do
-      assert Solution.run(2) == nil
+      assert Solution.run(2) == 12_841_228_084_455
     end
   end
 end

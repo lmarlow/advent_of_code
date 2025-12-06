@@ -14,14 +14,15 @@ defmodule AdventOfCode.Y2025.Day06 do
   """
   def run(data \\ input!(), part)
 
-  def run(data, part) when is_binary(data), do: data |> parse() |> run(part)
+  def run(data, part) when is_binary(data) do
+    trim = part == 1
+
+    data
+    |> String.split("\n", trim: trim)
+    |> run(part)
+  end
 
   def run(data, part) when is_list(data), do: data |> solve(part)
-
-  def parse(data) do
-    data
-    |> String.split("\n", trim: true)
-  end
 
   def solve(data, 1), do: solve_1(data)
   def solve(data, 2), do: solve_2(data)
@@ -143,7 +144,40 @@ defmodule AdventOfCode.Y2025.Day06 do
 
   """
   def solve_2(data) do
-    {:error, data}
+    [operators | rest] =
+      data
+      |> Enum.reverse()
+      |> Enum.reject(&(&1 == ""))
+
+    number_rows = rest |> Enum.reverse()
+
+    [operators | number_rows]
+    |> Enum.map(&String.graphemes/1)
+    |> Enum.zip()
+    |> Enum.chunk_by(fn tuple ->
+      tuple
+      |> Tuple.to_list()
+      |> Enum.all?(&(&1 == " "))
+    end)
+    |> Enum.reject(&match?([_], &1))
+    |> Enum.map(fn chunk ->
+      [[op | first_num] | rest_nums] =
+        chunk
+        |> Enum.map(&Tuple.to_list/1)
+
+      op =
+        case op do
+          "*" -> &Enum.product/1
+          "+" -> &Enum.sum/1
+        end
+
+      [first_num | rest_nums]
+      |> Enum.map(&Enum.join/1)
+      |> Enum.map(&String.trim/1)
+      |> Enum.map(&String.to_integer/1)
+      |> op.()
+    end)
+    |> Enum.sum()
   end
 
   # --- </Solution Functions> ---
