@@ -323,8 +323,125 @@ defmodule AdventOfCode.Y2025.Day07 do
 
   """
   def solve_2(data) do
-    {:error, data}
+    {grid, {max_col, max_row}} =
+      for {line, row} <- Enum.with_index(data),
+          {cell, column} <-
+            Enum.with_index(String.graphemes(line)),
+          reduce: {%{}, {0, 0}} do
+        {grid, {max_col, max_row}} ->
+          grid =
+            if cell in ~w[S ^] do
+              Map.put(grid, {column, row}, cell)
+            else
+              grid
+            end
+
+          {grid, {max(max_col, column), max(max_row, row)}}
+      end
+
+    dag = :digraph.new()
+
+    beam_pos =
+      Enum.find_value(grid, fn
+        {{x, y}, "S"} -> {x, y + 1}
+        _ -> false
+      end)
+
+    {_, root_y} = root = :digraph.add_vertex(dag, beam_pos)
+
+    {MapSet.new([root]), root_y + 1}
+    |> Stream.unfold(fn
+      {_prev_beams, y} when y > max_row ->
+        nil
+
+      {prev_beams, y} ->
+        beams =
+          for {px, _py} = prev_beam_vertex <- prev_beams, reduce: MapSet.new() do
+            acc ->
+              case Map.get(grid, {px, y}) do
+                "^" ->
+                  for {sx, _} = split <- [{px - 1, y}, {px + 1, y}], reduce: acc do
+                    acc ->
+                      if prev = Enum.find(prev_beams, fn {x, _} -> x == sx end) do
+                        MapSet.put(acc, prev)
+                      else
+                        :digraph.add_vertex(dag, split)
+                        :digraph.add_edge(dag, prev_beam_vertex, split)
+                        MapSet.put(acc, split)
+                      end
+                  end
+
+                _other ->
+                  MapSet.put(acc, prev_beam_vertex)
+              end
+          end
+
+        # IO.inspect(Enum.count(beams), label: y)
+        {y, {beams, y + 1}}
+    end)
+    |> Stream.run()
+
+    # print(grid, dag, max_col, max_row)
+
+    # :digraph.info(dag) |> dbg()
+    # :digraph.no_edges(dag) |> dbg()
+    # :digraph_utils.is_acyclic(dag) |> dbg()
+    # :digraph_utils.is_tree(dag) |> dbg()
+    # :digraph_utils.is_arborescence(dag) |> dbg()
+    # :digraph_utils.postorder(dag) |> dbg()
+    # :digraph_utils.preorder(dag) |> dbg()
+    # :digraph_utils.topsort(dag) |> dbg()
+    # :digraph.vertices(dag) |> Enum.count() |> dbg()
+
+    ways =
+      for v <- :digraph_utils.topsort(dag), reduce: %{root => 1} do
+        acc ->
+          for n <- :digraph.out_neighbours(dag, v), reduce: acc do
+            acc ->
+              Map.update(acc, n, 1, &(&1 + Map.get(acc, v, 1)))
+          end
+      end
+
+    for v <- :digraph.vertices(dag), :digraph.out_degree(dag, v) == 0, reduce: 0 do
+      acc -> acc + Map.get(ways, v)
+    end
   end
 
   # --- </Solution Functions> ---
+
+  # defp dfs(_grid, {_beam_x, max_row}, max_row, cache, count), do: {cache, count + 1}
+  #
+  # defp dfs(grid, {beam_x, beam_y}, max_row, cache, count) do
+  #   case cache
+  #   |> Map.put_new_lazy({beam_x, beam_y}, fn ->
+  #     case Map.get(grid, {beam_x, beam_y + 1}) do
+  #       "^" ->
+  #         {cache, left_count} = dfs(grid, {beam_x - 1, beam_y + 1}, max_row, cache, count)
+  #         {cache, right_count} = dfs(grid, {beam_x - 1, beam_y + 1}, max_row, cache, count)
+  #
+  #         {Map.put(cache, left_count + right_count}
+  #         |> Map.put({beam_x})
+  #
+  #         dfs(grid, {beam_x + 1, beam_y + 1}, max_row, cache, count)
+  #
+  #       _ ->
+  #         dfs(grid, {beam_x, beam_y + 1}, max_row, cache, count)
+  #     end
+  #   end)
+  #   |> Map.get({beam_x, beam_y})
+  # end
+
+  defp print(grid, dag, max_col, max_row) do
+    grid = Enum.reduce(:digraph.vertices(dag), grid, &Map.put(&2, &1, "|"))
+
+    for y <- 0..max_row do
+      for x <- 0..max_col do
+        grid
+        |> Map.get({x, y}, ".")
+        |> IO.write()
+      end
+
+      IO.write("\n")
+    end
+  end
 end
