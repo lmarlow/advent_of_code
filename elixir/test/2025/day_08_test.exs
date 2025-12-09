@@ -39,7 +39,7 @@ defmodule AdventOfCode.Y2025.Day08Test do
 
     @tag :y2508p1input
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(1) == 352_584
     end
   end
 

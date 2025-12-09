@@ -126,7 +126,39 @@ defmodule AdventOfCode.Y2025.Day08 do
 
   """
   def solve_1(data) do
-    {:error, data}
+    junction_boxes =
+      data
+      |> Enum.map(&String.split(&1, ","))
+      |> Enum.map(fn xyz -> Enum.map(xyz, &String.to_integer/1) end)
+
+    all_combos_with_distances =
+      for {box1, index1} <- Enum.with_index(junction_boxes),
+          {box2, index2} <- Enum.with_index(junction_boxes),
+          index2 > index1 do
+        [box1, box2] = Enum.sort([box1, box2])
+        {box1, box2, distance_squared(box1, box2)}
+      end
+      |> Enum.sort_by(fn {_, _, distance} -> distance end)
+      |> Enum.take(Enum.count(data))
+
+    circuits = Enum.map(junction_boxes, &MapSet.new([&1]))
+
+    all_combos_with_distances
+    |> Enum.reduce(circuits, fn {box1, box2, _distance} = _info, circuits ->
+      circuits
+      |> Enum.split_with(fn circuit -> box1 in circuit or box2 in circuit end)
+      |> case do
+        {[circuit1, circuit2], rest} ->
+          [MapSet.union(circuit1, circuit2) | rest]
+
+        {[circuit1], rest} ->
+          [circuit1 | rest]
+      end
+    end)
+    |> Enum.map(&Enum.count/1)
+    |> Enum.sort(:desc)
+    |> Enum.take(3)
+    |> Enum.product()
   end
 
   @doc """
@@ -139,4 +171,8 @@ defmodule AdventOfCode.Y2025.Day08 do
   end
 
   # --- </Solution Functions> ---
+
+  defp distance_squared([x0, y0, z0], [x1, y1, z1]) do
+    Integer.pow(x1 - x0, 2) + Integer.pow(y1 - y0, 2) + Integer.pow(z1 - z0, 2)
+  end
 end
