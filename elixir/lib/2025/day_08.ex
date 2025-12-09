@@ -183,7 +183,37 @@ defmodule AdventOfCode.Y2025.Day08 do
 
   """
   def solve_2(data) do
-    {:error, data}
+    junction_boxes =
+      data
+      |> Enum.map(&String.split(&1, ","))
+      |> Enum.map(fn xyz -> Enum.map(xyz, &String.to_integer/1) end)
+
+    all_combos_with_distances =
+      for {box1, index1} <- Enum.with_index(junction_boxes),
+          {box2, index2} <- Enum.with_index(junction_boxes),
+          index2 > index1 do
+        [box1, box2] = Enum.sort([box1, box2])
+        {box1, box2, distance_squared(box1, box2)}
+      end
+      |> Enum.sort_by(fn {_, _, distance} -> distance end)
+
+    circuits = Enum.map(junction_boxes, &MapSet.new([&1]))
+
+    all_combos_with_distances
+    |> Enum.reduce_while(circuits, fn {[x0, _y0, _z0] = box1, [x1, _y1, _z1] = box2, _distance} = _info, circuits ->
+      circuits
+      |> Enum.split_with(fn circuit -> box1 in circuit or box2 in circuit end)
+      |> case do
+        {_split, [] = _rest} ->
+          {:halt, x0 * x1}
+
+        {[circuit1, circuit2], rest} ->
+          {:cont, [MapSet.union(circuit1, circuit2) | rest]}
+
+        {[circuit1], rest} ->
+          {:cont, [circuit1 | rest]}
+      end
+    end)
   end
 
   # --- </Solution Functions> ---
