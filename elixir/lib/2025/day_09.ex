@@ -127,7 +127,16 @@ defmodule AdventOfCode.Y2025.Day09 do
 
   """
   def solve_1(data) do
-    {:error, data}
+    tiles =
+      data
+      |> Enum.map(fn line -> line |> String.split(",") |> Enum.map(&String.to_integer/1) end)
+
+    for {[x0, y0] = _p1, index1} <- Enum.with_index(tiles),
+        {[x1, y1] = _p2, index2} <- Enum.with_index(tiles),
+        index2 > index1 do
+      (abs(x1 - x0) + 1) * (abs(y1 - y0) + 1)
+    end
+    |> Enum.max()
   end
 
   @doc """
