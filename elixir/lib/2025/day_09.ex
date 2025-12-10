@@ -228,42 +228,52 @@ defmodule AdventOfCode.Y2025.Day09 do
 
   """
   def solve_2(data) do
-    {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} =
+    [first | _rest] =
+      data =
       data
       |> Enum.map(&String.split(&1, ","))
       |> Enum.map(fn nums -> Enum.map(nums, &String.to_integer/1) end)
-      |> Enum.chunk_every(2, 1)
-      |> Enum.reduce({9999999999, 0} = _min_max_x, {9999999999, 0} = _min_max_y, %{} = _horizontal_ranges, %{} = _vertical_ranges}, fn
-        [[x1, y1], [x1, y2]], {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} ->
-          {{min(x1, min_x), max(x1, max_x)}, Enum.min_max([y1, y2, min_y, max_y]), horizontal_ranges, merge_range(vertical_ranges, x1, y1, y2)}
 
-        [[x1, y1], [x2, y1]], {horizontal_ranges, vertical_ranges} ->
-          {Enum.min_max([x1, x2, min_x, max_x]), {min(y1, min_y), max(y1, max_y)}, merge_range(horizontal_ranges, y1, x1, x2), vertical_ranges}
-      end)
+    {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} =
+      data
+      |> Enum.concat([first])
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.reduce(
+        {{9_999_999_999, 0}, {9_999_999_999, 0}, %{}, %{}},
+        fn
+          [[x1, y1], [x1, y2]],
+          {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} ->
+            {{min(x1, min_x), max(x1, max_x)},
+             {Enum.min([y1, y2, min_y]), Enum.max([y1, y2, max_y])}, horizontal_ranges,
+             merge_range(vertical_ranges, x1, y1, y2)}
 
-    for 
-    {min_x, max_x} = Enum.min_max_by(horizontal_ranges, fn {x, _} -> x end)
-    {min_y, max_x} = Enum.min_max_by(horizontal_ranges, fn {x, _} -> x end)
+          [[x1, y1], [x2, y1]],
+          {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} ->
+            {{Enum.min([x1, x2, min_x]), Enum.max([x1, x2, max_x])},
+             {min(y1, min_y), max(y1, max_y)}, merge_range(horizontal_ranges, y1, x1, x2),
+             vertical_ranges}
+        end
+      )
   end
 
   # --- </Solution Functions> ---
 
   defp merge_range(range_map, key, v1, v2) do
     range_map
-      |> Map.update(key, [min(v1, v2)..max(v1, v2)], fn ranges ->
-      [min(v1, v2)..max(v1, v2)|ranges]
-    |> Enum.reduce([], fn range, consolidated_ranges ->
-      {disjoint_ranges, overlapping_ranges} =
-        Enum.split_with(consolidated_ranges, &Range.disjoint?(&1, range))
+    |> Map.update(key, [min(v1, v2)..max(v1, v2)], fn ranges ->
+      [min(v1, v2)..max(v1, v2) | ranges]
+      |> Enum.reduce([], fn range, consolidated_ranges ->
+        {disjoint_ranges, overlapping_ranges} =
+          Enum.split_with(consolidated_ranges, &Range.disjoint?(&1, range))
 
-      merged_range =
-        for r <- overlapping_ranges, reduce: range do
-          first..last//_ ->
-            min(first, r.first)..max(last, r.last)
-        end
+        merged_range =
+          for r <- overlapping_ranges, reduce: range do
+            first..last//_ ->
+              min(first, r.first)..max(last, r.last)
+          end
 
-      [merged_range | disjoint_ranges]
+        [merged_range | disjoint_ranges]
+      end)
     end)
-end)
   end
 end
