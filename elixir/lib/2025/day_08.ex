@@ -200,7 +200,9 @@ defmodule AdventOfCode.Y2025.Day08 do
     circuits = Enum.map(junction_boxes, &MapSet.new([&1]))
 
     all_combos_with_distances
-    |> Enum.reduce_while(circuits, fn {[x0, _y0, _z0] = box1, [x1, _y1, _z1] = box2, _distance} = _info, circuits ->
+    |> Enum.reduce_while(circuits, fn {[x0, _y0, _z0] = box1, [x1, _y1, _z1] = box2, _distance} =
+                                        _info,
+                                      circuits ->
       circuits
       |> Enum.split_with(fn circuit -> box1 in circuit or box2 in circuit end)
       |> case do

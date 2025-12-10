@@ -129,7 +129,8 @@ defmodule AdventOfCode.Y2025.Day09 do
   def solve_1(data) do
     tiles =
       data
-      |> Enum.map(fn line -> line |> String.split(",") |> Enum.map(&String.to_integer/1) end)
+      |> Enum.map(&String.split(&1, ","))
+      |> Enum.map(fn nums -> Enum.map(nums, &String.to_integer/1) end)
 
     for {[x0, y0] = _p1, index1} <- Enum.with_index(tiles),
         {[x1, y1] = _p2, index2} <- Enum.with_index(tiles),
@@ -227,8 +228,42 @@ defmodule AdventOfCode.Y2025.Day09 do
 
   """
   def solve_2(data) do
-    {:error, data}
+    {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} =
+      data
+      |> Enum.map(&String.split(&1, ","))
+      |> Enum.map(fn nums -> Enum.map(nums, &String.to_integer/1) end)
+      |> Enum.chunk_every(2, 1)
+      |> Enum.reduce({9999999999, 0} = _min_max_x, {9999999999, 0} = _min_max_y, %{} = _horizontal_ranges, %{} = _vertical_ranges}, fn
+        [[x1, y1], [x1, y2]], {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} ->
+          {{min(x1, min_x), max(x1, max_x)}, Enum.min_max([y1, y2, min_y, max_y]), horizontal_ranges, merge_range(vertical_ranges, x1, y1, y2)}
+
+        [[x1, y1], [x2, y1]], {horizontal_ranges, vertical_ranges} ->
+          {Enum.min_max([x1, x2, min_x, max_x]), {min(y1, min_y), max(y1, max_y)}, merge_range(horizontal_ranges, y1, x1, x2), vertical_ranges}
+      end)
+
+    for 
+    {min_x, max_x} = Enum.min_max_by(horizontal_ranges, fn {x, _} -> x end)
+    {min_y, max_x} = Enum.min_max_by(horizontal_ranges, fn {x, _} -> x end)
   end
 
   # --- </Solution Functions> ---
+
+  defp merge_range(range_map, key, v1, v2) do
+    range_map
+      |> Map.update(key, [min(v1, v2)..max(v1, v2)], fn ranges ->
+      [min(v1, v2)..max(v1, v2)|ranges]
+    |> Enum.reduce([], fn range, consolidated_ranges ->
+      {disjoint_ranges, overlapping_ranges} =
+        Enum.split_with(consolidated_ranges, &Range.disjoint?(&1, range))
+
+      merged_range =
+        for r <- overlapping_ranges, reduce: range do
+          first..last//_ ->
+            min(first, r.first)..max(last, r.last)
+        end
+
+      [merged_range | disjoint_ranges]
+    end)
+end)
+  end
 end
