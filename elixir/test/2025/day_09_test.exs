@@ -35,7 +35,7 @@ defmodule AdventOfCode.Y2025.Day09Test do
     @describetag :y2509p2
     @tag :y2509p2ex
     test "example" do
-      assert Solution.run(@sample_data, 2) == nil
+      assert Solution.run(@sample_data, 2) == 24
     end
 
     @tag :y2509p2input
