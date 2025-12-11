@@ -134,10 +134,11 @@ defmodule AdventOfCode.Y2025.Day09 do
 
     for {[x0, y0] = _p1, index1} <- Enum.with_index(tiles),
         {[x1, y1] = _p2, index2} <- Enum.with_index(tiles),
-        index2 > index1 do
-      (abs(x1 - x0) + 1) * (abs(y1 - y0) + 1)
+        index2 > index1,
+        reduce: 0 do
+      acc ->
+        max(acc, (abs(x1 - x0) + 1) * (abs(y1 - y0) + 1))
     end
-    |> Enum.max()
   end
 
   @doc """
@@ -234,26 +235,43 @@ defmodule AdventOfCode.Y2025.Day09 do
       |> Enum.map(&String.split(&1, ","))
       |> Enum.map(fn nums -> Enum.map(nums, &String.to_integer/1) end)
 
-    {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} =
+    {min_x, max_x} = data |> Enum.map(&hd/1) |> Enum.min_max()
+    {min_y, max_y} = data |> Enum.map(&List.last/1) |> Enum.min_max()
+    dbg({{min_x, min_y}, {max_x, max_y}})
+
+    {horizontal_ranges, vertical_ranges} =
       data
       |> Enum.concat([first])
+      # |> tap(fn data -> File.write!("202509.svg", svg(data)) end)
       |> Enum.chunk_every(2, 1, :discard)
       |> Enum.reduce(
-        {{9_999_999_999, 0}, {9_999_999_999, 0}, %{}, %{}},
+        {%{}, %{}},
         fn
-          [[x1, y1], [x1, y2]],
-          {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} ->
-            {{min(x1, min_x), max(x1, max_x)},
-             {Enum.min([y1, y2, min_y]), Enum.max([y1, y2, max_y])}, horizontal_ranges,
-             merge_range(vertical_ranges, x1, y1, y2)}
+          [[x1, y1], [x1, y2]], {horizontal_ranges, vertical_ranges} ->
+            if abs(y1 - y2) > 50000 do
+              dbg({[[x1, y1], [x1, y2]], abs(y1 - y2)})
+            end
 
-          [[x1, y1], [x2, y1]],
-          {{min_x, max_x}, {min_y, max_y}, horizontal_ranges, vertical_ranges} ->
-            {{Enum.min([x1, x2, min_x]), Enum.max([x1, x2, max_x])},
-             {min(y1, min_y), max(y1, max_y)}, merge_range(horizontal_ranges, y1, x1, x2),
-             vertical_ranges}
+            {horizontal_ranges, merge_range(vertical_ranges, x1, y1, y2)}
+
+          [[x1, y1], [x2, y1]], {horizontal_ranges, vertical_ranges} ->
+            if abs(x1 - x2) > 50000 do
+              dbg({[[x1, y1], [x2, y1]], abs(x1 - x2)})
+            end
+
+            {merge_range(horizontal_ranges, y1, x1, x2), vertical_ranges}
         end
       )
+
+    for {[x0, y0] = p1, index1} <- Enum.with_index(data),
+        {[x1, y1] = p2, index2} <- Enum.with_index(data),
+        index2 > index1,
+        not (min(y0, y1) <= 93055 and max(y0, y1) > 93055),
+        valid_rectangle(p1, p2, horizontal_ranges, vertical_ranges),
+        reduce: 0 do
+      acc ->
+        max(acc, (abs(x1 - x0) + 1) * (abs(y1 - y0) + 1))
+    end
   end
 
   # --- </Solution Functions> ---
@@ -263,8 +281,11 @@ defmodule AdventOfCode.Y2025.Day09 do
     |> Map.update(key, [min(v1, v2)..max(v1, v2)], fn ranges ->
       [min(v1, v2)..max(v1, v2) | ranges]
       |> Enum.reduce([], fn range, consolidated_ranges ->
-        {disjoint_ranges, overlapping_ranges} =
-          Enum.split_with(consolidated_ranges, &Range.disjoint?(&1, range))
+        {overlapping_ranges, disjoint_ranges} =
+          Enum.split_with(consolidated_ranges, fn existing_range, range ->
+            not Range.disjoint?(existing_range, range) or existing_range.last == range.first - 1 or
+              existing_range.first == range.last + 1
+          end)
 
         merged_range =
           for r <- overlapping_ranges, reduce: range do
@@ -275,5 +296,41 @@ defmodule AdventOfCode.Y2025.Day09 do
         [merged_range | disjoint_ranges]
       end)
     end)
+  end
+
+  defp valid_rectangle([x0, y0], [x1, y1], horizontal_ranges, vertical_ranges) do
+    for x <- min(x0, x1)..max(x0, x1),
+        y <- min(y0, y1)..max(y0, y1),
+        reduce: true do
+      acc ->
+        acc and (member?(horizontal_ranges[y], x) or member?(vertical_ranges[x], y))
+    end
+  end
+
+  defp member?(ranges, value) when is_list(ranges) do
+    Enum.any?(ranges, &(value in &1))
+  end
+
+  defp member?(_, _), do: false
+
+  def svg(points) do
+    {min_x, max_x} = points |> Enum.map(&hd/1) |> Enum.min_max()
+    {min_y, max_y} = points |> Enum.map(&List.last/1) |> Enum.min_max()
+    margin = 50
+    divisor = if max_x > 10000, do: 100, else: 1
+
+    lines =
+      points
+      |> Enum.map(fn [x, y] -> [div(x - min_x, divisor), div(y - min_y, divisor)] end)
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.map_join(fn [[x1, y1], [x2, y2]] ->
+        ~s[<line x1="#{x1}" y1="#{y1}" x2="#{x2}" y2="#{y2}" style="stroke:red;stroke-width:10" />]
+      end)
+
+    """
+    <svg height="#{div(max_y - min_y + 2 * margin, divisor)}" width="#{div(max_x - min_x + 2 * margin, divisor)}" xmlns="http://www.w3.org/2000/svg">
+      #{lines}
+    </svg>
+    """
   end
 end
