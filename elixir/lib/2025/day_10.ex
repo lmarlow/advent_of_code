@@ -6,6 +6,8 @@ defmodule AdventOfCode.Y2025.Day10 do
   """
   use AdventOfCode.Helpers.InputReader, year: 2025, day: 10
 
+  import Bitwise
+
   @doc ~S"""
   Sample data:
 
@@ -123,6 +125,30 @@ defmodule AdventOfCode.Y2025.Day10 do
 
   """
   def solve_1(data) do
+    data =
+      for row <- data do
+        [lights | rest] = String.split(row)
+        [joltages | buttons] = Enum.reverse(rest)
+
+        lights =
+          lights
+          |> String.slice(1..-2//1)
+          |> String.replace(".", "0")
+          |> String.replace("#", "1")
+          |> String.to_integer(2)
+          |> tap(&dbg(Integer.to_string(&1, 2)))
+
+        buttons =
+          buttons
+          |> Enum.map(&String.split(&1, ~r/[^\d]/, trim: true))
+          |> Enum.map(fn btns -> Enum.map(btns, &String.to_integer/1) end)
+          |> Enum.map(&Enum.reduce(&1, 0, fn pos, mask -> mask ||| 1 <<< pos end))
+          |> dbg()
+          |> tap(fn masks -> Enum.each(masks, &dbg(Integer.to_string(&1, 2))) end)
+
+        {lights, buttons, joltages}
+      end
+
     {:error, data}
   end
 
