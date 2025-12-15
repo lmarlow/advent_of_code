@@ -149,6 +149,12 @@ defmodule AdventOfCode.Y2025.Day10 do
         {lights, buttons, joltages}
       end
 
+    for {_, b, _} <- data do
+      Enum.count(b)
+    end
+    |> Enum.sort()
+    |> dbg()
+
     {:error, data}
   end
 
