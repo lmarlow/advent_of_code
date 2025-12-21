@@ -20,9 +20,27 @@ defmodule AdventOfCode.Y2025.Day10Test do
       assert Solution.run(@sample_data, 1) == 7
     end
 
+    @tag :y2510p1exl1
+    test "example line 1" do
+      assert Solution.solve_1(["[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"]) == 2
+    end
+
+    @tag :y2510p1exl2
+    test "example line 2" do
+      assert Solution.solve_1(["[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}"]) ==
+               3
+    end
+
+    @tag :y2510p1exl3
+    test "example line 3" do
+      assert Solution.solve_1([
+               "[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}"
+             ]) == 2
+    end
+
     @tag :y2510p1input
     test "input file" do
-      assert Solution.run(1) == nil
+      assert Solution.run(1) == 457
     end
   end
 

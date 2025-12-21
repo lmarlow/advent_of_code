@@ -125,37 +125,29 @@ defmodule AdventOfCode.Y2025.Day10 do
 
   """
   def solve_1(data) do
-    data =
-      for row <- data do
-        [lights | rest] = String.split(row)
-        [joltages | buttons] = Enum.reverse(rest)
+    for row <- data do
+      [lights | rest] = String.split(row)
+      [joltages | buttons] = Enum.reverse(rest)
 
-        lights =
-          lights
-          |> String.slice(1..-2//1)
-          |> String.replace(".", "0")
-          |> String.replace("#", "1")
-          |> String.to_integer(2)
-          |> tap(&dbg(Integer.to_string(&1, 2)))
+      lights =
+        lights
+        |> String.slice(1..-2//1)
+        |> String.replace(".", "0")
+        |> String.replace("#", "1")
+        |> String.reverse()
+        |> String.to_integer(2)
 
-        buttons =
-          buttons
-          |> Enum.map(&String.split(&1, ~r/[^\d]/, trim: true))
-          |> Enum.map(fn btns -> Enum.map(btns, &String.to_integer/1) end)
-          |> Enum.map(&Enum.reduce(&1, 0, fn pos, mask -> mask ||| 1 <<< pos end))
-          |> dbg()
-          |> tap(fn masks -> Enum.each(masks, &dbg(Integer.to_string(&1, 2))) end)
+      buttons =
+        buttons
+        |> Enum.map(&String.split(&1, ~r/[^\d]/, trim: true))
+        |> Enum.map(fn btns -> Enum.map(btns, &String.to_integer/1) end)
+        |> Enum.map(&Enum.reduce(&1, 0, fn pos, mask -> mask ||| 1 <<< pos end))
+        |> Enum.reverse()
 
-        {lights, buttons, joltages}
-      end
-
-    for {_, b, _} <- data do
-      Enum.count(b)
+      %{desired_state: lights, buttons: buttons, joltages: joltages}
     end
-    |> Enum.sort()
-    |> dbg()
-
-    {:error, data}
+    |> Enum.map(&fewest_presses(&1.desired_state, &1.buttons))
+    |> Enum.sum()
   end
 
   @doc """
@@ -168,4 +160,41 @@ defmodule AdventOfCode.Y2025.Day10 do
   end
 
   # --- </Solution Functions> ---
+
+  defp fewest_presses(desired_state, buttons) do
+    seen = MapSet.new()
+    current_state = 0
+    q = :queue.new()
+
+    # BFS
+    {seen, :queue.in({current_state, 0, []}, q)}
+    |> Stream.unfold(fn
+      :halt ->
+        nil
+
+      {seen, q} ->
+        case :queue.out(q) do
+          {:empty, _q} ->
+            nil
+
+          {{:value, {^desired_state, presses, pressed}}, _q} ->
+            # IO.inspect({desired_state, pressed}, base: :binary)
+            {{desired_state, presses, pressed}, :halt}
+
+          {{:value, {current_state, presses, pressed}}, q} ->
+            if current_state in seen do
+              {{current_state, presses, pressed}, {seen, q}}
+            else
+              {{current_state, presses, pressed},
+               {MapSet.put(seen, current_state),
+                Enum.reduce(buttons, q, fn b, q ->
+                  new_state = bxor(current_state, b)
+                  :queue.in({new_state, presses + 1, [{new_state, b} | pressed]}, q)
+                end)}}
+            end
+        end
+    end)
+    |> Enum.map(fn {_lights, c, _pressed} -> c end)
+    |> Enum.max()
+  end
 end
